@@ -53,16 +53,16 @@ var
   G: TGUID;
   Buf: rawbytestring;
 begin
-  // Створюємо новий GUID (16 байт у G)
+  // РЎС‚РІРѕСЂСЋС”РјРѕ РЅРѕРІРёР№ GUID (16 Р±Р°Р№С‚ Сѓ G)
   if CreateGUID(G) <> S_OK then
     Exit('');
 
-  // Виділяємо рядок завдовжки 16 байт
+  // Р’РёРґС–Р»СЏС”РјРѕ СЂСЏРґРѕРє Р·Р°РІРґРѕРІР¶РєРё 16 Р±Р°Р№С‚
   SetLength(Buf, SizeOf(TGUID));
-  // Копіюємо “сирі” байти GUID’а в рядок
+  // РљРѕРїС–СЋС”РјРѕ вЂњСЃРёСЂС–вЂќ Р±Р°Р№С‚Рё GUIDвЂ™Р° РІ СЂСЏРґРѕРє
   Move(G, Buf[1], SizeOf(TGUID));
 
-  // Генеруємо ваш ID на основі цих байт
+  // Р“РµРЅРµСЂСѓС”РјРѕ РІР°С€ ID РЅР° РѕСЃРЅРѕРІС– С†РёС… Р±Р°Р№С‚
   Result := GenID(Buf);
 end;
 
@@ -83,34 +83,34 @@ var
   i, idx, sepPos: integer;
   keyName: string;
 begin
-  // 1. Формуємо повний шлях до метафайла
+  // 1. Р¤РѕСЂРјСѓС”РјРѕ РїРѕРІРЅРёР№ С€Р»СЏС… РґРѕ РјРµС‚Р°С„Р°Р№Р»Р°
   metaPath := IncludeTrailingPathDelimiter(aBaseDir) + metafile;
 
   sl := TStringList.Create;
   try
     sl.LoadFromFile(metaPath);
 
-    // 2. Проходимо по рядках і оновлюємо тільки потрібні
+    // 2. РџСЂРѕС…РѕРґРёРјРѕ РїРѕ СЂСЏРґРєР°С… С– РѕРЅРѕРІР»СЋС”РјРѕ С‚С–Р»СЊРєРё РїРѕС‚СЂС–Р±РЅС–
     for i := 0 to sl.Count - 1 do
     begin
       sepPos := Pos(':', sl[i]);
       if sepPos > 0 then
       begin
-        // виділяємо ім’я ключа ліворуч від двокрапки
+        // РІРёРґС–Р»СЏС”РјРѕ С–РјвЂ™СЏ РєР»СЋС‡Р° Р»С–РІРѕСЂСѓС‡ РІС–Рґ РґРІРѕРєСЂР°РїРєРё
         keyName := Trim(Copy(sl[i], 1, sepPos - 1));
 
-        // перевіряємо всі константні ключі
+        // РїРµСЂРµРІС–СЂСЏС”РјРѕ РІСЃС– РєРѕРЅСЃС‚Р°РЅС‚РЅС– РєР»СЋС‡С–
         for idx := Low(Keys) to High(Keys) do
           if SameText(keyName, Keys[idx]) then
           begin
-            // замінюємо цілий рядок на новий ID
+            // Р·Р°РјС–РЅСЋС”РјРѕ С†С–Р»РёР№ СЂСЏРґРѕРє РЅР° РЅРѕРІРёР№ ID
             sl[i] := Format('%s: andr%s%s', [Keys[idx], Prefixes[idx], GetRandomId]);
             Break;
           end;
       end;
     end;
 
-    // 3. Зберігаємо зміни
+    // 3. Р—Р±РµСЂС–РіР°С”РјРѕ Р·РјС–РЅРё
     sl.SaveToFile(metaPath);
   finally
     sl.Free;
@@ -169,36 +169,36 @@ var
   i, ColonPos: integer;
   sLine, Key, Value: string;
 begin
-  // Підготовка загального JSON
+  // РџС–РґРіРѕС‚РѕРІРєР° Р·Р°РіР°Р»СЊРЅРѕРіРѕ JSON
   Result := TJSONObject.Create;
   SectionArr := TJSONArray.Create;
   Result.Add('sections', SectionArr);
 
-  // Завантажуємо файл
+  // Р—Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ С„Р°Р№Р»
   Lines := TStringList.Create;
   try
     Lines.LoadFromFile(FileName);
 
-    // Ініціалізуємо першу секцію
+    // Р†РЅС–С†С–Р°Р»С–Р·СѓС”РјРѕ РїРµСЂС€Сѓ СЃРµРєС†С–СЋ
     AttrObj := TJSONObject.Create;
     SectionObj := TJSONObject.Create(['_', AttrObj]);
 
-    // Проходимо по індексах, щоб мати змогу вільно призначати sLine
+    // РџСЂРѕС…РѕРґРёРјРѕ РїРѕ С–РЅРґРµРєСЃР°С…, С‰РѕР± РјР°С‚Рё Р·РјРѕРіСѓ РІС–Р»СЊРЅРѕ РїСЂРёР·РЅР°С‡Р°С‚Рё sLine
     for i := 0 to Lines.Count - 1 do
     begin
       sLine := Trim(Lines[i]);
       if sLine = '' then
       begin
-        // Завершуємо поточну секцію, якщо вона має вміст
+        // Р—Р°РІРµСЂС€СѓС”РјРѕ РїРѕС‚РѕС‡РЅСѓ СЃРµРєС†С–СЋ, СЏРєС‰Рѕ РІРѕРЅР° РјР°С” РІРјС–СЃС‚
         if AttrObj.Count > 0 then
           SectionArr.Add(SectionObj);
-        // Готуємо нову секцію
+        // Р“РѕС‚СѓС”РјРѕ РЅРѕРІСѓ СЃРµРєС†С–СЋ
         AttrObj := TJSONObject.Create;
         SectionObj := TJSONObject.Create(['_', AttrObj]);
       end
       else
       begin
-        // Парсимо ключ і значення
+        // РџР°СЂСЃРёРјРѕ РєР»СЋС‡ С– Р·РЅР°С‡РµРЅРЅСЏ
         ColonPos := Pos(':', sLine);
         if ColonPos > 0 then
         begin
@@ -209,7 +209,7 @@ begin
       end;
     end;
 
-    // Додаємо останню секцію, якщо вона непуста
+    // Р”РѕРґР°С”РјРѕ РѕСЃС‚Р°РЅРЅСЋ СЃРµРєС†С–СЋ, СЏРєС‰Рѕ РІРѕРЅР° РЅРµРїСѓСЃС‚Р°
     if AttrObj.Count > 0 then
       SectionArr.Add(SectionObj)
     else
@@ -410,7 +410,7 @@ begin
     if Sections = nil then
       raise Exception.Create('Manifest has no sections.');
 
-    // Зчитуємо Package-Name + Package-Id
+    // Р—С‡РёС‚СѓС”РјРѕ Package-Name + Package-Id
     Attrs := FindSectionWithAttrs(Sections, ['Package-Name', 'Package-Id']);
     if Attrs = nil then
       raise Exception.Create('No section with Package-Name and Package-Id');
@@ -418,7 +418,7 @@ begin
     PkgName := GetAttr(Attrs, 'Package-Name');
     PkgId := GetAttr(Attrs, 'Package-Id');
 
-    // Проходимо всі секції, шукаємо Entry-Point-Key + Entry-Point
+    // РџСЂРѕС…РѕРґРёРјРѕ РІСЃС– СЃРµРєС†С–С—, С€СѓРєР°С”РјРѕ Entry-Point-Key + Entry-Point
     for i := 0 to Sections.Count - 1 do
     begin
       Section := Sections.Objects[i];
@@ -435,7 +435,7 @@ begin
     ParamList.Free;
     PathList.Free;
     JSONArr.Free;
-    // ResultPairs не звільняємо — повертаємо його
+    // ResultPairs РЅРµ Р·РІС–Р»СЊРЅСЏС”РјРѕ вЂ” РїРѕРІРµСЂС‚Р°С”РјРѕ Р№РѕРіРѕ
   end;
 end;
 
@@ -558,28 +558,28 @@ var
   fs: TFileStream;
   h: THandle;
 begin
-  // 1. Формуємо базові шляхи з гарантією кінцевого роздільника
+  // 1. Р¤РѕСЂРјСѓС”РјРѕ Р±Р°Р·РѕРІС– С€Р»СЏС…Рё Р· РіР°СЂР°РЅС‚С–С”СЋ РєС–РЅС†РµРІРѕРіРѕ СЂРѕР·РґС–Р»СЊРЅРёРєР°
   BasePath := IncludeTrailingPathDelimiter(aBaseDir) + 'sys.data.' + Name;
   AssetsDir := IncludeTrailingPathDelimiter(BasePath) + 'assets';
   DataDir := IncludeTrailingPathDelimiter(AssetsDir) + 'data';
   MetaDir := IncludeTrailingPathDelimiter(BasePath) + 'META-INF';
 
-  // 2. Створюємо каталоги (якщо ще не існують)
+  // 2. РЎС‚РІРѕСЂСЋС”РјРѕ РєР°С‚Р°Р»РѕРіРё (СЏРєС‰Рѕ С‰Рµ РЅРµ С–СЃРЅСѓСЋС‚СЊ)
   ForceDirectories(DataDir);
   ForceDirectories(MetaDir);
 
-  // 3. Допоміжний «touch» для порожніх файлів
+  // 3. Р”РѕРїРѕРјС–Р¶РЅРёР№ В«touchВ» РґР»СЏ РїРѕСЂРѕР¶РЅС–С… С„Р°Р№Р»С–РІ
   h := FileCreate(IncludeTrailingPathDelimiter(AssetsDir) + 'links');
   FileClose(h);
   h := FileCreate(IncludeTrailingPathDelimiter(AssetsDir) + 'perms');
   FileClose(h);
 
-  // 4. Генеруємо і записуємо MANIFEST.MF
+  // 4. Р“РµРЅРµСЂСѓС”РјРѕ С– Р·Р°РїРёСЃСѓС”РјРѕ MANIFEST.MF
   ManifestPath := IncludeTrailingPathDelimiter(MetaDir) + 'MANIFEST.MF';
   buf := GenerateManifestHeader(Name);
   fs := TFileStream.Create(ManifestPath, fmCreate);
   try
-    // Пишемо весь буфер від першого символа
+    // РџРёС€РµРјРѕ РІРµСЃСЊ Р±СѓС„РµСЂ РІС–Рґ РїРµСЂС€РѕРіРѕ СЃРёРјРІРѕР»Р°
     fs.Write(buf[1], Length(buf));
   finally
     fs.Free;
@@ -728,7 +728,7 @@ begin
           MaxIndex := 0;
     end;
 
-    // Додати відсутні
+    // Р”РѕРґР°С‚Рё РІС–РґСЃСѓС‚РЅС–
     TargetFile := IfThen(MaxIndex <= 0, IncludeTrailingPathDelimiter(Dir) + BaseName,
       Format('%s%s.%3.3d', [IncludeTrailingPathDelimiter(Dir), BaseName, MaxIndex]));
 
@@ -786,7 +786,7 @@ begin
   if not Assigned(Attrs) then
     raise Exception.Create('No section with Package-Name and Package-Id found.');
 
-  // Атрибути
+  // РђС‚СЂРёР±СѓС‚Рё
   PkgName := GetAttr(Attrs, 'Package-Name');
   PkgId := GetAttr(Attrs, 'Package-Id');
   DisplayName := GetAttr(Attrs, 'Display-Name');
@@ -804,7 +804,7 @@ begin
   if IconsRaw = '' then IconsRaw := DEFAULT_ICON;
   if Orientation = '' then Orientation := 'auto';
 
-  // Обробка Entry-Point
+  // РћР±СЂРѕР±РєР° Entry-Point
   if EPExpr = '' then
     EPBinary := 'app/native/' + PkgName
   else
@@ -842,34 +842,34 @@ var
   fileList, manifestList: TStringList;
   fullPath, relPath, hash: string;
 begin
-  // 1. Гарантуємо, що BaseDir закінчується на '\' або '/'
+  // 1. Р“Р°СЂР°РЅС‚СѓС”РјРѕ, С‰Рѕ BaseDir Р·Р°РєС–РЅС‡СѓС”С‚СЊСЃСЏ РЅР° '\' Р°Р±Рѕ '/'
   BaseDir := IncludeTrailingPathDelimiter(aBaseDir);
   AssetDir := BaseDir + 'assets';
   ManifestFile := BaseDir + metafile;
 
-  // 2. Запам’ятовуємо довжину з урахуванням роздільника
+  // 2. Р—Р°РїР°РјвЂ™СЏС‚РѕРІСѓС”РјРѕ РґРѕРІР¶РёРЅСѓ Р· СѓСЂР°С…СѓРІР°РЅРЅСЏРј СЂРѕР·РґС–Р»СЊРЅРёРєР°
   BaseLen := Length(BaseDir);
 
-  // 3. Збираємо всі файли з assets рекурсивно
+  // 3. Р—Р±РёСЂР°С”РјРѕ РІСЃС– С„Р°Р№Р»Рё Р· assets СЂРµРєСѓСЂСЃРёРІРЅРѕ
   fileList := TStringList.Create;
   try
     FindAllFiles(fileList, AssetDir, '*', True);
 
-    // 4. Завантажуємо основний маніфест
+    // 4. Р—Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ РѕСЃРЅРѕРІРЅРёР№ РјР°РЅС–С„РµСЃС‚
     manifestList := TStringList.Create;
     try
       manifestList.Text := ManifestMain(ManifestFile);
 
-      // 5. Для кожного файлу: обчислюємо SHA-512 і додаємо запис
+      // 5. Р”Р»СЏ РєРѕР¶РЅРѕРіРѕ С„Р°Р№Р»Сѓ: РѕР±С‡РёСЃР»СЋС”РјРѕ SHA-512 С– РґРѕРґР°С”РјРѕ Р·Р°РїРёСЃ
       for fullPath in fileList do
       begin
         hash := CalcSha512(fullPath);
-        // відносний шлях — усе після BaseDir
+        // РІС–РґРЅРѕСЃРЅРёР№ С€Р»СЏС… вЂ” СѓСЃРµ РїС–СЃР»СЏ BaseDir
         relPath := Copy(fullPath, BaseLen + 1, MaxInt);
         manifestList.Add(Format(EntryFmt, [relPath, hash]));
       end;
 
-      // 6. Зберігаємо оновлений маніфест
+      // 6. Р—Р±РµСЂС–РіР°С”РјРѕ РѕРЅРѕРІР»РµРЅРёР№ РјР°РЅС–С„РµСЃС‚
       manifestList.SaveToFile(ManifestFile);
     finally
       manifestList.Free;
@@ -891,11 +891,11 @@ var
 begin
   Result := True;
 
-  // Встановити власника (для поточного об'єкта)
+  // Р’СЃС‚Р°РЅРѕРІРёС‚Рё РІР»Р°СЃРЅРёРєР° (РґР»СЏ РїРѕС‚РѕС‡РЅРѕРіРѕ РѕР±'С”РєС‚Р°)
   if fpChown(PChar(Path), uid, gid) <> 0 then
     Exit(False);
 
-  // Визначити тип: файл чи каталог
+  // Р’РёР·РЅР°С‡РёС‚Рё С‚РёРї: С„Р°Р№Р» С‡Рё РєР°С‚Р°Р»РѕРі
   if fpStat(PChar(Path), StatBuf) <> 0 then
     Exit(False);
 
@@ -904,15 +904,15 @@ begin
   else
     Mode := DefaultMode;
 
-  // Встановити права
+  // Р’СЃС‚Р°РЅРѕРІРёС‚Рё РїСЂР°РІР°
   if fpChmod(PChar(Path), Mode) <> 0 then
     Exit(False);
 
-  // Якщо це не каталог — завершити
+  // РЇРєС‰Рѕ С†Рµ РЅРµ РєР°С‚Р°Р»РѕРі вЂ” Р·Р°РІРµСЂС€РёС‚Рё
   if not FPS_ISDIR(StatBuf.st_mode) then
     Exit(True);
 
-  // Рекурсивно пройтись по вмісту каталогу
+  // Р РµРєСѓСЂСЃРёРІРЅРѕ РїСЂРѕР№С‚РёСЃСЊ РїРѕ РІРјС–СЃС‚Сѓ РєР°С‚Р°Р»РѕРіСѓ
   if FindFirst(Path + DirectorySeparator + '*', faAnyFile, SR) = 0 then
   begin
     repeat
@@ -936,7 +936,7 @@ var
   Buffer: array[0..4095] of char;
   Len: ssize_t;
 begin
-  // Якщо посилання вже існує
+  // РЇРєС‰Рѕ РїРѕСЃРёР»Р°РЅРЅСЏ РІР¶Рµ С–СЃРЅСѓС”
   if fpLStat(PChar(LinkPath), nil) = 0 then
   begin
     Len := fpReadLink(PChar(LinkPath), @Buffer[0], SizeOf(Buffer) - 1);
@@ -945,16 +945,16 @@ begin
       Buffer[Len] := #0;
       if StrPas(Buffer) = TargetPath then
       begin
-        // Посилання вже правильне — нічого не робимо
+        // РџРѕСЃРёР»Р°РЅРЅСЏ РІР¶Рµ РїСЂР°РІРёР»СЊРЅРµ вЂ” РЅС–С‡РѕРіРѕ РЅРµ СЂРѕР±РёРјРѕ
         Result := True;
         Exit;
       end;
     end;
-    // Видалити неправильне або пошкоджене посилання
+    // Р’РёРґР°Р»РёС‚Рё РЅРµРїСЂР°РІРёР»СЊРЅРµ Р°Р±Рѕ РїРѕС€РєРѕРґР¶РµРЅРµ РїРѕСЃРёР»Р°РЅРЅСЏ
     fpUnlink(PChar(LinkPath));
   end;
 
-  // Створити нове симлінк
+  // РЎС‚РІРѕСЂРёС‚Рё РЅРѕРІРµ СЃРёРјР»С–РЅРє
   Result := fpSymlink(PChar(TargetPath), PChar(LinkPath)) = 0;
 end;
 
@@ -1053,21 +1053,21 @@ begin
     pkg := GetPackageDName(Manifest);
     TargetAppDir := IncludeTrailingPathDelimiter(BaseMount) + 'apps' + DirectorySeparator + pkg;
 
-    // Копіювання bar, якщо ще не встановлено
+    // РљРѕРїС–СЋРІР°РЅРЅСЏ bar, СЏРєС‰Рѕ С‰Рµ РЅРµ РІСЃС‚Р°РЅРѕРІР»РµРЅРѕ
     if not SameFileName(ExpandFileName(bar), ExpandFileName(TargetAppDir)) then
     begin
       if DirectoryExists(TargetAppDir) and not DeleteDirectory(TargetAppDir, False) then
         raise Exception.CreateFmt('Failed to remove existing directory: %s', [TargetAppDir]);
 
       if not CopyDirTree(bar, IncludeTrailingPathDelimiter(TargetAppDir), [cffOverwriteFile, cffCreateDestDirectory]) then
-        raise Exception.CreateFmt('Failed to copy %s → %s', [bar, TargetAppDir]);
+        raise Exception.CreateFmt('Failed to copy %s в†’ %s', [bar, TargetAppDir]);
     end;
 
     if not ChownChmodRecursive(TargetAppDir, 89, gid) then
       raise Exception.CreateFmt('Failed to set ownership/mode recursively for %s to 89:%d',
         [TargetAppDir, gid]);
 
-    // Створення директорій для appdata
+    // РЎС‚РІРѕСЂРµРЅРЅСЏ РґРёСЂРµРєС‚РѕСЂС–Р№ РґР»СЏ appdata
     AppDataBase := BaseMount + '/accounts/1000/_startup_data/appdata/' + pkg;
     EnsureAppDirs(AppDataBase, pkg);
 
@@ -1075,20 +1075,20 @@ begin
       raise Exception.CreateFmt('Failed to set ownership/mode recursively for %s to 1000:%d',
         [TargetAppDir, gid]);
 
-    // Символічне посилання
+    // РЎРёРјРІРѕР»С–С‡РЅРµ РїРѕСЃРёР»Р°РЅРЅСЏ
     LinkPath := IncludeTrailingPathDelimiter(BaseMount) + 'apps' + DirectorySeparator +
       'gid2app' + DirectorySeparator + IntToStr(gid);
     if not CreateSymbolicLink(LinkPath, TargetAppDir) then
-      raise Exception.CreateFmt('Failed to create symbolic link: %s → %s', [LinkPath, TargetAppDir]);
+      raise Exception.CreateFmt('Failed to create symbolic link: %s в†’ %s', [LinkPath, TargetAppDir]);
 
-    // PPS installer → appdetails
+    // PPS installer в†’ appdetails
     ReplaceOrAddInMultiFileSet(
       BaseMount + PPS_INSTALLER_APP, 'applications',
       pkg,
       ConvertManifestToApplications(Manifest, gid, extra)
       );
 
-    // PPS installer → registeredapps
+    // PPS installer в†’ registeredapps
     AddOrReplace(PPS_INSTALLER_REG, '', [pkg],
       [ConvertManifestToRegisteredApp(Manifest, gid, extra)]);
 

@@ -84,7 +84,7 @@ type
 
   TPartitionArray = array of TPartitionInfo;
 
-  { Mapper для читання секторів з VMDK (flat або sparse) }
+  { Mapper РґР»СЏ С‡РёС‚Р°РЅРЅСЏ СЃРµРєС‚РѕСЂС–РІ Р· VMDK (flat Р°Р±Рѕ sparse) }
   TVMDKReader = class
   private
     FStream: TStream;
@@ -285,7 +285,7 @@ begin
 
   if grainSector = 0 then
   begin
-    // гранула не виділена => пропускаємо запис
+    // РіСЂР°РЅСѓР»Р° РЅРµ РІРёРґС–Р»РµРЅР° => РїСЂРѕРїСѓСЃРєР°С”РјРѕ Р·Р°РїРёСЃ
     FileOffset := 0;
     Exit;  // Result = False
   end;
@@ -322,7 +322,7 @@ begin
 
       if MapLBAtoFileOffset(lbaCur, fileOff) then
       begin
-        // існуюча гранула
+        // С–СЃРЅСѓСЋС‡Р° РіСЂР°РЅСѓР»Р°
         FStream.Position := fileOff;
         FStream.ReadBuffer(ptr^, chunk * SECTOR_SIZE);
       end
@@ -338,7 +338,7 @@ begin
     end
     else
     begin
-      // flat/raw: читаємо все одразу
+      // flat/raw: С‡РёС‚Р°С”РјРѕ РІСЃРµ РѕРґСЂР°Р·Сѓ
       if not MapLBAtoFileOffset(lbaCur, fileOff) then Exit;
       FStream.Position := fileOff;
       FStream.ReadBuffer(ptr^, left * SECTOR_SIZE);
@@ -367,7 +367,7 @@ begin
 
   while left > 0 do
   begin
-    // Розрахунок залишку секторів до кінця гранули
+    // Р РѕР·СЂР°С…СѓРЅРѕРє Р·Р°Р»РёС€РєСѓ СЃРµРєС‚РѕСЂС–РІ РґРѕ РєС–РЅС†СЏ РіСЂР°РЅСѓР»Рё
     granRemain := maxPerGrain - (lbaCur mod maxPerGrain);
     if granRemain = 0 then granRemain := maxPerGrain;
     if left < granRemain then chunk := left
@@ -376,10 +376,10 @@ begin
 
     if FKind = vkSparse then
     begin
-      // Шукаємо перший блок наявних гранул
+      // РЁСѓРєР°С”РјРѕ РїРµСЂС€РёР№ Р±Р»РѕРє РЅР°СЏРІРЅРёС… РіСЂР°РЅСѓР»
       while (chunk > 0) and (not MapLBAtoFileOffset(lbaCur, fileOff)) do
       begin
-        // Пропускаємо відсутню гранулу
+        // РџСЂРѕРїСѓСЃРєР°С”РјРѕ РІС–РґСЃСѓС‚РЅСЋ РіСЂР°РЅСѓР»Сѓ
         Dec(chunk);
         Inc(lbaCur);
         Inc(ptr, SECTOR_SIZE);
@@ -394,7 +394,7 @@ begin
         end;
       end;
 
-      // Записуємо блок наявної гранули
+      // Р—Р°РїРёСЃСѓС”РјРѕ Р±Р»РѕРє РЅР°СЏРІРЅРѕС— РіСЂР°РЅСѓР»Рё
       if chunk > 0 then
       begin
         FStream.Position := fileOff;
@@ -406,7 +406,7 @@ begin
     end
     else
     begin
-      // flat/raw: записуємо все одразу
+      // flat/raw: Р·Р°РїРёСЃСѓС”РјРѕ РІСЃРµ РѕРґСЂР°Р·Сѓ
       if not MapLBAtoFileOffset(lbaCur, fileOff) then Exit;
       FStream.Position := fileOff;
       FStream.WriteBuffer(ptr^, left * SECTOR_SIZE);
@@ -418,7 +418,7 @@ begin
 end;
 
 
-{ ==== Парсинг MBR/GPT ==== }
+{ ==== РџР°СЂСЃРёРЅРі MBR/GPT ==== }
 
 procedure AddPartition(var Arr: TPartitionArray; const P: TPartitionInfo);
 var
@@ -456,21 +456,21 @@ begin
 
     if (not isLogical) and isExt then
     begin
-      // Це extended контейнер у головному MBR
+      // Р¦Рµ extended РєРѕРЅС‚РµР№РЅРµСЂ Сѓ РіРѕР»РѕРІРЅРѕРјСѓ MBR
       baseExtended := QWord(entry.StartingLBA);
-      // Запустимо ланцюг EBR
+      // Р—Р°РїСѓСЃС‚РёРјРѕ Р»Р°РЅС†СЋРі EBR
       ParseMBR(reader, baseExtended, baseExtended, True, outArr);
     end
     else if isLogical then
     begin
-      // У EBR перший запис — логічний розділ, другий — посилання на наступний EBR
+      // РЈ EBR РїРµСЂС€РёР№ Р·Р°РїРёСЃ вЂ” Р»РѕРіС–С‡РЅРёР№ СЂРѕР·РґС–Р», РґСЂСѓРіРёР№ вЂ” РїРѕСЃРёР»Р°РЅРЅСЏ РЅР° РЅР°СЃС‚СѓРїРЅРёР№ EBR
       if i = 0 then
       begin
         partStartAbs := baseExtended + QWord(entry.StartingLBA);
         partSize := QWord(entry.SizeInLBA);
 
         FillChar(p, SizeOf(p), 0);
-        p.Index := 0; // індекс проставимо пізніше при друці
+        p.Index := 0; // С–РЅРґРµРєСЃ РїСЂРѕСЃС‚Р°РІРёРјРѕ РїС–Р·РЅС–С€Рµ РїСЂРё РґСЂСѓС†С–
         p.Scheme := 'MBR-LOG';
         p.TypeHex := '0x' + IntToHex(entry.PartitionType, 2);
         p.StartLBA := partStartAbs;
@@ -500,7 +500,7 @@ begin
     end;
   end;
 
-  // перехід до наступного EBR
+  // РїРµСЂРµС…С–Рґ РґРѕ РЅР°СЃС‚СѓРїРЅРѕРіРѕ EBR
   if isLogical and (ebrNextRel <> 0) then
     ParseMBR(reader, baseExtended + ebrNextRel, baseExtended, True, outArr);
 end;
@@ -523,7 +523,7 @@ var
   buf2: array[0..SECTOR_SIZE - 1] of byte;
   firstPart, secondPart: longword;
 begin
-  // LBA1 — GPT Header
+  // LBA1 вЂ” GPT Header
   ok := reader.ReadSectors(1, 1, @buf[0]);
   if not ok then Exit;
   Move(buf[0], hdr, SizeOf(hdr));
@@ -536,17 +536,17 @@ begin
   totalEntries := hdr.NumberOfPartitionEntries;
   if totalEntries = 0 then Exit;
 
-  // зчитуємо всі entries посекторно
+  // Р·С‡РёС‚СѓС”РјРѕ РІСЃС– entries РїРѕСЃРµРєС‚РѕСЂРЅРѕ
   SetLength(entryBuf, hdr.SizeOfPartitionEntry);
   posLBA := hdr.PartitionEntriesLBA;
 
   for i := 0 to totalEntries - 1 do
   begin
-    // кожен запис може перетинати сектори; читаємо точний сектор для цього запису
-    // але простіше: читаємо кожен запис окремо:
-    // entryN знаходиться за адресою posLBA + (i * Size)/512
-    // зсув у секторі:
-    // Для простоти читаємо сектор, де лежить початок запису
+    // РєРѕР¶РµРЅ Р·Р°РїРёСЃ РјРѕР¶Рµ РїРµСЂРµС‚РёРЅР°С‚Рё СЃРµРєС‚РѕСЂРё; С‡РёС‚Р°С”РјРѕ С‚РѕС‡РЅРёР№ СЃРµРєС‚РѕСЂ РґР»СЏ С†СЊРѕРіРѕ Р·Р°РїРёСЃСѓ
+    // Р°Р»Рµ РїСЂРѕСЃС‚С–С€Рµ: С‡РёС‚Р°С”РјРѕ РєРѕР¶РµРЅ Р·Р°РїРёСЃ РѕРєСЂРµРјРѕ:
+    // entryN Р·РЅР°С…РѕРґРёС‚СЊСЃСЏ Р·Р° Р°РґСЂРµСЃРѕСЋ posLBA + (i * Size)/512
+    // Р·СЃСѓРІ Сѓ СЃРµРєС‚РѕСЂС–:
+    // Р”Р»СЏ РїСЂРѕСЃС‚РѕС‚Рё С‡РёС‚Р°С”РјРѕ СЃРµРєС‚РѕСЂ, РґРµ Р»РµР¶РёС‚СЊ РїРѕС‡Р°С‚РѕРє Р·Р°РїРёСЃСѓ
 
     absByte := posLBA * SECTOR_SIZE + QWord(i) * QWord(hdr.SizeOfPartitionEntry);
     sectorLBA := absByte div SECTOR_SIZE;
@@ -559,7 +559,7 @@ begin
       Move(buf[inSectorOff], gptEntry, SizeOf(TGPTEntry))
     else
     begin
-      // запис перетинає сектор — дочитуємо наступний
+      // Р·Р°РїРёСЃ РїРµСЂРµС‚РёРЅР°С” СЃРµРєС‚РѕСЂ вЂ” РґРѕС‡РёС‚СѓС”РјРѕ РЅР°СЃС‚СѓРїРЅРёР№
       firstPart := SECTOR_SIZE - inSectorOff;
       secondPart := hdr.SizeOfPartitionEntry - firstPart;
       Move(buf[inSectorOff], pbyte(@gptEntry)^, firstPart);
@@ -568,7 +568,7 @@ begin
       Move(buf2[0], pbyte(@gptEntry)[firstPart], secondPart);
     end;
 
-    // порожній запис?
+    // РїРѕСЂРѕР¶РЅС–Р№ Р·Р°РїРёСЃ?
     if (gptEntry.PartitionTypeGUID[0] = 0) and (gptEntry.PartitionTypeGUID[1] = 0) then
       Continue;
 
@@ -603,10 +603,10 @@ begin
     end;
   end;
 
-  // Перевіримо GPT (protective MBR + GPT)
+  // РџРµСЂРµРІС–СЂРёРјРѕ GPT (protective MBR + GPT)
   ParseGPT(reader, parts);
 
-  // Пронумеруємо індекси
+  // РџСЂРѕРЅСѓРјРµСЂСѓС”РјРѕ С–РЅРґРµРєСЃРё
   for i := 0 to Length(parts) - 1 do
     parts[i].Index := i + 1;
 end;
@@ -626,7 +626,7 @@ begin
   try
     total := p.SizeLBA;
     doneSectors := 0;
-    chunkSectors := 2048; // 2048*512 = 1 MiB буфер
+    chunkSectors := 2048; // 2048*512 = 1 MiB Р±СѓС„РµСЂ
     SetLength(buf, chunkSectors * SECTOR_SIZE);
 
     while doneSectors < total do
@@ -663,7 +663,7 @@ begin
   try
     total := p.SizeLBA;
     doneSectors := 0;
-    chunkSectors := 2048; // 2048*512 = 1 MiB буфер
+    chunkSectors := 2048; // 2048*512 = 1 MiB Р±СѓС„РµСЂ
     SetLength(buf, chunkSectors * SECTOR_SIZE);
 
     while doneSectors < total do
@@ -801,7 +801,7 @@ begin
     end
     else
     begin
-      // останній невідомий аргумент трактуємо як шлях до VMDK
+      // РѕСЃС‚Р°РЅРЅС–Р№ РЅРµРІС–РґРѕРјРёР№ Р°СЂРіСѓРјРµРЅС‚ С‚СЂР°РєС‚СѓС”РјРѕ СЏРє С€Р»СЏС… РґРѕ VMDK
       vmdkPath := args[i];
     end;
     Inc(i);

@@ -282,7 +282,7 @@ begin
   inStream.Position := 0;
   original_size := inStream.Size;
 
-  // Буфери один раз
+  // Р‘СѓС„РµСЂРё РѕРґРёРЅ СЂР°Р·
   SetLength(chunk_buffer, LZO_CHUNK_SIZE);
   SetLength(comp_buffer, LZO_CHUNK_SIZE + LZO_CHUNK_SIZE div 16 + 64 + 3);
 
@@ -296,11 +296,11 @@ begin
 
     if t = 1 then
     begin
-      // *** LZO режим ***
+      // *** LZO СЂРµР¶РёРј ***
       chunk_count := 1;
       packed_size := GetPackedSize(inode);
-      packed_size := (packed_size + 3) and not 3;  // округлення до DWORD
-      // Резервуємо місце під таблицю офсетів
+      packed_size := (packed_size + 3) and not 3;  // РѕРєСЂСѓРіР»РµРЅРЅСЏ РґРѕ DWORD
+      // Р РµР·РµСЂРІСѓС”РјРѕ РјС–СЃС†Рµ РїС–Рґ С‚Р°Р±Р»РёС†СЋ РѕС„СЃРµС‚С–РІ
       pos_data := max_chunks * 4;
       tempStream.Size := pos_data;
       tempStream.Position := pos_data;
@@ -310,59 +310,59 @@ begin
         read_now := inStream.Read(chunk_buffer[0], LZO_CHUNK_SIZE);
         if read_now <= 0 then Break;
 
-        // Стискаємо LZO
+        // РЎС‚РёСЃРєР°С”РјРѕ LZO
         comp_size := Length(comp_buffer);
         if lzo1x_999_compress(@chunk_buffer[0], read_now, @comp_buffer[0], comp_size,
           @fWorkBuffer[0]) <> 0 then
-          Exit(-3);// Помилка LZO
+          Exit(-3);// РџРѕРјРёР»РєР° LZO
 
-        // Оптимізуємо
+        // РћРїС‚РёРјС–Р·СѓС”РјРѕ
         opt_size := read_now;
         if lzo1x_optimize(@comp_buffer[0], comp_size, @chunk_buffer[0], opt_size,
           @fWorkBuffer[0]) <> 0 then
-          Exit(-4); // Помилка optimize
+          Exit(-4); // РџРѕРјРёР»РєР° optimize
 
-        // Записуємо стиснений блок
+        // Р—Р°РїРёСЃСѓС”РјРѕ СЃС‚РёСЃРЅРµРЅРёР№ Р±Р»РѕРє
         //tempStream.Position := pos_data;
         tempStream.WriteBuffer(comp_buffer[0], comp_size);
         //Inc(pos_data, comp_size);
 
-        // Записуємо офсет поточного блоку
+        // Р—Р°РїРёСЃСѓС”РјРѕ РѕС„СЃРµС‚ РїРѕС‚РѕС‡РЅРѕРіРѕ Р±Р»РѕРєСѓ
         chunk_offsets[chunk_count] := tempStream.Position;
         Inc(chunk_count);
 
       end;
 
-      // Повертаємося і записуємо таблицю офсетів
+      // РџРѕРІРµСЂС‚Р°С”РјРѕСЃСЏ С– Р·Р°РїРёСЃСѓС”РјРѕ С‚Р°Р±Р»РёС†СЋ РѕС„СЃРµС‚С–РІ
       tempStream.Position := 0;
       for i := 0 to chunk_count - 1 do
         tempStream.WriteDWord(chunk_offsets[i]);
 
-      // Усікання зайвого резерву
+      // РЈСЃС–РєР°РЅРЅСЏ Р·Р°Р№РІРѕРіРѕ СЂРµР·РµСЂРІСѓ
       // if tempStream.Size > pos_data then
       //   tempStream.Size := pos_data;
 
-      // Перевірка вигідності LZO
+      // РџРµСЂРµРІС–СЂРєР° РІРёРіС–РґРЅРѕСЃС‚С– LZO
       if (tempStream.Size > packed_size) and (original_size > packed_size) then
       begin
-        Exit(-1); // LZO не вигідний
+        Exit(-1); // LZO РЅРµ РІРёРіС–РґРЅРёР№
       end;
     end
     else
     begin
-      // RAW режим — просто копіюємо
+      // RAW СЂРµР¶РёРј вЂ” РїСЂРѕСЃС‚Рѕ РєРѕРїС–СЋС”РјРѕ
       tempStream.CopyFrom(inStream, original_size);
-      inode.emode := inode.emode and (not _LZO); // вимикаємо LZO
+      inode.emode := inode.emode and (not _LZO); // РІРёРјРёРєР°С”РјРѕ LZO
     end;
 
-    // Запис у fStream
+    // Р—Р°РїРёСЃ Сѓ fStream
     fStream.Position := inode.offset;
     tempStream.Position := 0;
     fStream.CopyFrom(tempStream, tempStream.Size);
     Result := tempStream.Size;
     hash := SHA256OfStream(tempStream);
 
-    // Оновлюємо розмір розпакованого файлу
+    // РћРЅРѕРІР»СЋС”РјРѕ СЂРѕР·РјС–СЂ СЂРѕР·РїР°РєРѕРІР°РЅРѕРіРѕ С„Р°Р№Р»Сѓ
     inode.size := original_size;
   finally
     tempStream.Free;
@@ -418,13 +418,13 @@ begin
     if (table_size < 0) or (table_size mod 4 <> 0) then
       raise Exception.Create('Invalid chunk table size');
 
-    chunk_count := (table_size div 4); // без першого
+    chunk_count := (table_size div 4); // Р±РµР· РїРµСЂС€РѕРіРѕ
     last_offset := start_offset;
 
     for i := 1 to chunk_count do
       last_offset := fStream.ReadDWord;
 
-    // сумарний розмір = таблиця + всі блоки
+    // СЃСѓРјР°СЂРЅРёР№ СЂРѕР·РјС–СЂ = С‚Р°Р±Р»РёС†СЏ + РІСЃС– Р±Р»РѕРєРё
     Result := last_offset;
   end
   else
@@ -704,13 +704,13 @@ begin
 
   if t = 1 then
   begin
-    // ---- 1. Читаємо таблицю офсетів ----
+    // ---- 1. Р§РёС‚Р°С”РјРѕ С‚Р°Р±Р»РёС†СЋ РѕС„СЃРµС‚С–РІ ----
     first_offset := fStream.ReadDWord;
     SetLength(offsets, 1);
     offsets[0] := first_offset;
     chunk_count := 1;
 
-    // Читаємо інші офсети поки не дійдемо до початку першого чанку
+    // Р§РёС‚Р°С”РјРѕ С–РЅС€С– РѕС„СЃРµС‚Рё РїРѕРєРё РЅРµ РґС–Р№РґРµРјРѕ РґРѕ РїРѕС‡Р°С‚РєСѓ РїРµСЂС€РѕРіРѕ С‡Р°РЅРєСѓ
     while fStream.Position < inode.offset + first_offset do
     begin
       tmp_offset := fStream.ReadDWord;
@@ -719,7 +719,7 @@ begin
       Inc(chunk_count);
     end;
 
-    // ---- 2. Розпаковуємо чанки ----
+    // ---- 2. Р РѕР·РїР°РєРѕРІСѓС”РјРѕ С‡Р°РЅРєРё ----
     for i := 0 to High(offsets) - 1 do
     begin
       chunk_start := offsets[i];

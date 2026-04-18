@@ -8,7 +8,7 @@ uses
   SysUtils, Classes;
 
 type
-  { Інтерфейс для команди }
+  { Р†РЅС‚РµСЂС„РµР№СЃ РґР»СЏ РєРѕРјР°РЅРґРё }
   ICommand = interface
     ['{F9D9BFA1-4F34-4A8E-91DD-2A1B3F5C7E63}']
     function GetName: string;
@@ -17,7 +17,7 @@ type
     function Execute(const Args: array of string): integer;
   end;
 
-  { Абстрактний базовий клас для команд }
+  { РђР±СЃС‚СЂР°РєС‚РЅРёР№ Р±Р°Р·РѕРІРёР№ РєР»Р°СЃ РґР»СЏ РєРѕРјР°РЅРґ }
   TBasicCommand = class(TInterfacedObject, ICommand)
   private
     FName: string;
@@ -31,7 +31,7 @@ type
     function Execute(const Args: array of string): integer; virtual; abstract;
   end;
 
-  { Інтерфейс для списку команд }
+  { Р†РЅС‚РµСЂС„РµР№СЃ РґР»СЏ СЃРїРёСЃРєСѓ РєРѕРјР°РЅРґ }
   ICommandList = interface
     ['{2D5E3B9F-ABC0-4F31-A1A5-ED18B5E8F3C1}']
     procedure RegisterCommand(Cmd: ICommand);
@@ -40,7 +40,7 @@ type
     procedure ExecuteCommand(const Line: string);
   end;
 
-  { ====== Команда Help ====== }
+  { ====== РљРѕРјР°РЅРґР° Help ====== }
 type
   THelpCommand = class(TBasicCommand)
   private
@@ -50,7 +50,7 @@ type
     function Execute(const Args: array of string): integer; override;
   end;
 
-  { ====== Реалізація ICommandList ====== }
+  { ====== Р РµР°Р»С–Р·Р°С†С–СЏ ICommandList ====== }
 
 type
   TCommandList = class(TInterfacedObject, ICommandList)
@@ -65,7 +65,7 @@ type
 
 implementation
 
-{ ====== Парсер аргументів ====== }
+{ ====== РџР°СЂСЃРµСЂ Р°СЂРіСѓРјРµРЅС‚С–РІ ====== }
 
 function ParseArgs(const S: string): TStringArray;
 var
@@ -76,7 +76,7 @@ var
   trimmedLine: string;
   hashPos: integer;
 begin
-  // Ігноруємо все після #
+  // Р†РіРЅРѕСЂСѓС”РјРѕ РІСЃРµ РїС–СЃР»СЏ #
   hashPos := Pos('#', S);
   if hashPos > 0 then
     trimmedLine := Copy(S, 1, hashPos - 1)

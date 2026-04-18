@@ -459,7 +459,7 @@ begin
     Exit;
 
   fStream.Position := inodePos(idx);
-  fStream.ReadBuffer(Result, SizeOf(TQNX6_DInode)); // Безпечніше, ніж Read
+  fStream.ReadBuffer(Result, SizeOf(TQNX6_DInode)); // Р‘РµР·РїРµС‡РЅС–С€Рµ, РЅС–Р¶ Read
 
   cacheDInodes.AddOrSetValue(idx, Result);
 end;
@@ -474,7 +474,7 @@ begin
   if fDirectWrite then
   begin
     fStream.Position := inodePos(idx);
-    fStream.WriteBuffer(Value, SizeOf(TQNX6_DInode)); // Безпечний запис
+    fStream.WriteBuffer(Value, SizeOf(TQNX6_DInode)); // Р‘РµР·РїРµС‡РЅРёР№ Р·Р°РїРёСЃ
   end
   else
     changedInodes.Add(idx);
@@ -499,15 +499,15 @@ begin
 
   inode := GetInode(idx);
 
-  // Перевірка для директорій
+  // РџРµСЂРµРІС–СЂРєР° РґР»СЏ РґРёСЂРµРєС‚РѕСЂС–Р№
   if dir then
   begin
     if not FpS_ISDIR(inode.mode) then Exit(-ESysENOTDIR);
     Count := ReadDirectory(idx, DE);
-    if Count > 2 then Exit(-ESysENOTEMPTY); // мають бути тільки "." та ".."
+    if Count > 2 then Exit(-ESysENOTEMPTY); // РјР°СЋС‚СЊ Р±СѓС‚Рё С‚С–Р»СЊРєРё "." С‚Р° ".."
   end;
 
-  // Пошук у батьківській директорії
+  // РџРѕС€СѓРє Сѓ Р±Р°С‚СЊРєС–РІСЃСЊРєС–Р№ РґРёСЂРµРєС‚РѕСЂС–С—
   entryName := ExtractFileName(ExcludeTrailingPathDelimiter(aName));
   parentName := GetParentFolder(aName);
   parentIdx := GetInodeByPath(PChar(parentName));
@@ -517,15 +517,15 @@ begin
   i := NameIdx(entryName, DE);
   if i < 0 then Exit;
 
-  // 1. Видаляємо запис із батьківської директорії
+  // 1. Р’РёРґР°Р»СЏС”РјРѕ Р·Р°РїРёСЃ С–Р· Р±Р°С‚СЊРєС–РІСЃСЊРєРѕС— РґРёСЂРµРєС‚РѕСЂС–С—
   Delete(DE, i, 1);
   WriteDirectory(parentIdx, DE);
 
-  // 2. Зменшуємо лічильник посилань основного інода
+  // 2. Р—РјРµРЅС€СѓС”РјРѕ Р»С–С‡РёР»СЊРЅРёРє РїРѕСЃРёР»Р°РЅСЊ РѕСЃРЅРѕРІРЅРѕРіРѕ С–РЅРѕРґР°
   if inode.nlink > 0 then
     Dec(inode.nlink);
 
-  // 3. Специфіка для директорій (зменшуємо nlink батька, бо зникає "..")
+  // 3. РЎРїРµС†РёС„С–РєР° РґР»СЏ РґРёСЂРµРєС‚РѕСЂС–Р№ (Р·РјРµРЅС€СѓС”РјРѕ nlink Р±Р°С‚СЊРєР°, Р±Рѕ Р·РЅРёРєР°С” "..")
   if dir then
   begin
     pInode := GetInode(parentIdx);
@@ -534,15 +534,15 @@ begin
       Dec(pInode.nlink);
       SetInode(parentIdx, pInode);
     end;
-    // Директорія також втрачає власне посилання "."
+    // Р”РёСЂРµРєС‚РѕСЂС–СЏ С‚Р°РєРѕР¶ РІС‚СЂР°С‡Р°С” РІР»Р°СЃРЅРµ РїРѕСЃРёР»Р°РЅРЅСЏ "."
     if inode.nlink > 0 then Dec(inode.nlink);
   end;
 
-  // 4. ФІЗИЧНЕ ВИДАЛЕННЯ: тільки якщо посилань більше немає
+  // 4. Р¤Р†Р—Р�Р§РќР• Р’Р�Р”РђР›Р•РќРќРЇ: С‚С–Р»СЊРєРё СЏРєС‰Рѕ РїРѕСЃРёР»Р°РЅСЊ Р±С–Р»СЊС€Рµ РЅРµРјР°С”
   if inode.nlink = 0 then
   begin
     LoadInodeBlocks(idx, blocks);
-    // Звільняємо всі рівні індексації та блоки даних
+    // Р—РІС–Р»СЊРЅСЏС”РјРѕ РІСЃС– СЂС–РІРЅС– С–РЅРґРµРєСЃР°С†С–С— С‚Р° Р±Р»РѕРєРё РґР°РЅРёС…
     for i := 0 to High(blocks.level) do
       if blocks.level[i].Count > 0 then
         FreeBlocks(blocks.level[i].Data);
@@ -551,7 +551,7 @@ begin
   end
   else
   begin
-    // Якщо посилання ще є, просто оновлюємо інод на диску
+    // РЇРєС‰Рѕ РїРѕСЃРёР»Р°РЅРЅСЏ С‰Рµ С”, РїСЂРѕСЃС‚Рѕ РѕРЅРѕРІР»СЋС”РјРѕ С–РЅРѕРґ РЅР° РґРёСЃРєСѓ
     SetInode(idx, inode);
   end;
 
@@ -581,11 +581,11 @@ begin
   if len = 0 then
     Exit;
 
-  // S_IFLNK = тип символьного посилання, $1FF = права доступу 0777
+  // S_IFLNK = С‚РёРї СЃРёРјРІРѕР»СЊРЅРѕРіРѕ РїРѕСЃРёР»Р°РЅРЅСЏ, $1FF = РїСЂР°РІР° РґРѕСЃС‚СѓРїСѓ 0777
   idx := CreateObject(aName, $1FF or S_IFLNK);
   if idx <= 0 then
   begin
-    Result := idx; // передати код помилки
+    Result := idx; // РїРµСЂРµРґР°С‚Рё РєРѕРґ РїРѕРјРёР»РєРё
     Exit;
   end;
 
@@ -603,26 +603,26 @@ var
 begin
   Result := -ESysENOENT;
 
-  // 1. Знаходимо інод існуючого файлу
+  // 1. Р—РЅР°С…РѕРґРёРјРѕ С–РЅРѕРґ С–СЃРЅСѓСЋС‡РѕРіРѕ С„Р°Р№Р»Сѓ
   targetIdx := GetInodeByPath(aLinksToName);
   if targetIdx = 0 then Exit;
 
   inode := GetInode(targetIdx);
 
-  // 2. QNX6 зазвичай забороняє hard links на директорії (щоб уникнути циклів)
+  // 2. QNX6 Р·Р°Р·РІРёС‡Р°Р№ Р·Р°Р±РѕСЂРѕРЅСЏС” hard links РЅР° РґРёСЂРµРєС‚РѕСЂС–С— (С‰РѕР± СѓРЅРёРєРЅСѓС‚Рё С†РёРєР»С–РІ)
   if FpS_ISDIR(inode.mode) then
   begin
     Result := -ESysEPERM;
     Exit;
   end;
 
-  // 3. Створюємо новий запис у директорії, вказуючи на старий інод
-  // Передаємо targetIdx як третій параметр у CreateObject
+  // 3. РЎС‚РІРѕСЂСЋС”РјРѕ РЅРѕРІРёР№ Р·Р°РїРёСЃ Сѓ РґРёСЂРµРєС‚РѕСЂС–С—, РІРєР°Р·СѓСЋС‡Рё РЅР° СЃС‚Р°СЂРёР№ С–РЅРѕРґ
+  // РџРµСЂРµРґР°С”РјРѕ targetIdx СЏРє С‚СЂРµС‚С–Р№ РїР°СЂР°РјРµС‚СЂ Сѓ CreateObject
   Result := CreateObject(aName, (inode.mode and $1FF), targetIdx);
 
   if Result > 0 then
   begin
-    // 4. Інкрементуємо лічильник посилань в іноді
+    // 4. Р†РЅРєСЂРµРјРµРЅС‚СѓС”РјРѕ Р»С–С‡РёР»СЊРЅРёРє РїРѕСЃРёР»Р°РЅСЊ РІ С–РЅРѕРґС–
     Inc(inode.nlink);
     SetInode(targetIdx, inode);
     Result := 0;
@@ -657,7 +657,7 @@ begin
     Exit;
   end;
 
-  // створюємо інод директорії
+  // СЃС‚РІРѕСЂСЋС”РјРѕ С–РЅРѕРґ РґРёСЂРµРєС‚РѕСЂС–С—
   idx := CreateInode(mode or S_IFDIR);
   if idx = 0 then
   begin
@@ -667,7 +667,7 @@ begin
 
   inode := GetInode(idx);
 
-  // ініціалізація "." і ".."
+  // С–РЅС–С†С–Р°Р»С–Р·Р°С†С–СЏ "." С– ".."
   SetLength(entries, 2);
   RawDirEntrySetName(entries[0], '.');
 
@@ -682,12 +682,12 @@ begin
     Exit;
   end;
 
-  // виставляємо nlink = 2 ('.' і запис у батьківській директорії)
+  // РІРёСЃС‚Р°РІР»СЏС”РјРѕ nlink = 2 ('.' С– Р·Р°РїРёСЃ Сѓ Р±Р°С‚СЊРєС–РІСЃСЊРєС–Р№ РґРёСЂРµРєС‚РѕСЂС–С—)
   inode.nlink := 2;
 
   SetInode(idx, inode);
 
-  // додаємо новий запис у батьківську директорію
+  // РґРѕРґР°С”РјРѕ РЅРѕРІРёР№ Р·Р°РїРёСЃ Сѓ Р±Р°С‚СЊРєС–РІСЃСЊРєСѓ РґРёСЂРµРєС‚РѕСЂС–СЋ
   i := Length(parentEntries);
   SetLength(parentEntries, i + 1);
   RawDirEntrySetName(parentEntries[i], entryName);
@@ -699,7 +699,7 @@ begin
     Exit;
   end;
 
-  // збільшуємо nlink у батька (через новий "..")
+  // Р·Р±С–Р»СЊС€СѓС”РјРѕ nlink Сѓ Р±Р°С‚СЊРєР° (С‡РµСЂРµР· РЅРѕРІРёР№ "..")
   parentInode := GetInode(parentIdx);
   Inc(parentInode.nlink);
   SetInode(parentIdx, parentInode);
@@ -736,7 +736,7 @@ begin
     Exit;
   end;
 
-  // створюємо інод, якщо не переданий
+  // СЃС‚РІРѕСЂСЋС”РјРѕ С–РЅРѕРґ, СЏРєС‰Рѕ РЅРµ РїРµСЂРµРґР°РЅРёР№
   if idx = 0 then
   begin
     idx := CreateInode(mode);
@@ -749,11 +749,11 @@ begin
 
   inode := GetInode(idx);
 
-  // для файлів: nlink = 1 (один запис у директорії)
+  // РґР»СЏ С„Р°Р№Р»С–РІ: nlink = 1 (РѕРґРёРЅ Р·Р°РїРёСЃ Сѓ РґРёСЂРµРєС‚РѕСЂС–С—)
   inode.nlink := 1;
   SetInode(idx, inode);
 
-  // додаємо запис у батьківську директорію
+  // РґРѕРґР°С”РјРѕ Р·Р°РїРёСЃ Сѓ Р±Р°С‚СЊРєС–РІСЃСЊРєСѓ РґРёСЂРµРєС‚РѕСЂС–СЋ
   i := Length(entries);
   SetLength(entries, i + 1);
   RawDirEntrySetName(entries[i], entryName);
@@ -761,7 +761,7 @@ begin
 
   if WriteDirectory(parentIdx, entries) < 0 then
   begin
-    EraseInode(idx); // при помилці знищуємо
+    EraseInode(idx); // РїСЂРё РїРѕРјРёР»С†С– Р·РЅРёС‰СѓС”РјРѕ
     Result := -ESysEIO;
     Exit;
   end;
@@ -784,7 +784,7 @@ begin
   parentPath1 := GetParentFolder(aName);
   parentPath2 := GetParentFolder(aNewName);
 
-  // Переіменування тільки в межах однієї директорії
+  // РџРµСЂРµС–РјРµРЅСѓРІР°РЅРЅСЏ С‚С–Р»СЊРєРё РІ РјРµР¶Р°С… РѕРґРЅС–С”С— РґРёСЂРµРєС‚РѕСЂС–С—
   if parentPath1 <> parentPath2 then
   begin
     Result := -ESysEXDEV; // Cross-device link
@@ -801,19 +801,19 @@ begin
     Exit;
   end;
 
-  // Перевірка: чи вже існує файл із новим іменем
+  // РџРµСЂРµРІС–СЂРєР°: С‡Рё РІР¶Рµ С–СЃРЅСѓС” С„Р°Р№Р» С–Р· РЅРѕРІРёРј С–РјРµРЅРµРј
   if NameIdx(newName, entries) >= 0 then
   begin
     Result := -ESysEEXIST;
     Exit;
   end;
 
-  // Знаходимо стару назву
+  // Р—РЅР°С…РѕРґРёРјРѕ СЃС‚Р°СЂСѓ РЅР°Р·РІСѓ
   i := NameIdx(oldName, entries);
   if i < 0 then
     Exit;
 
-  // Перейменування
+  // РџРµСЂРµР№РјРµРЅСѓРІР°РЅРЅСЏ
   cacheInodes.Remove(aName);
   RawDirEntrySetName(entries[i], newName);
 
@@ -866,7 +866,7 @@ begin
 
   LoadInodeBlocks(idx, Blocks);
 
-  // 🔢 Обчислення кількості блоків на рівнях
+  // рџ”ў РћР±С‡РёСЃР»РµРЅРЅСЏ РєС–Р»СЊРєРѕСЃС‚С– Р±Р»РѕРєС–РІ РЅР° СЂС–РІРЅСЏС…
   l[0] := new_b;
   if new_b <= QNX6FS_DIRECT_BLKS then
   begin
@@ -924,17 +924,17 @@ var
 begin
   inode := GetInode(idx);
 
-  // Збереження структури блоків у масив inode.blocks
+  // Р—Р±РµСЂРµР¶РµРЅРЅСЏ СЃС‚СЂСѓРєС‚СѓСЂРё Р±Р»РѕРєС–РІ Сѓ РјР°СЃРёРІ inode.blocks
   SaveBlocks(inode.blocks, Blocks);
 
-  // Оновлення рівня індексації та розміру
+  // РћРЅРѕРІР»РµРЅРЅСЏ СЂС–РІРЅСЏ С–РЅРґРµРєСЃР°С†С–С— С‚Р° СЂРѕР·РјС–СЂСѓ
   inode.indirect := Blocks.top;
   inode.size := size;
 
-  // Запис назад
+  // Р—Р°РїРёСЃ РЅР°Р·Р°Рґ
   SetInode(idx, inode);
 
-  // Оновлення кешу блоків
+  // РћРЅРѕРІР»РµРЅРЅСЏ РєРµС€Сѓ Р±Р»РѕРєС–РІ
   cacheBlocksChains.AddOrSetValue(idx, Blocks);
 
   fChanged := True;
@@ -948,10 +948,10 @@ var
   blockAddr: DWord;
   srcData: PDWord;
 begin
-  // Заповнення нулями або 0xFF для очистки вихідного масиву
+  // Р—Р°РїРѕРІРЅРµРЅРЅСЏ РЅСѓР»СЏРјРё Р°Р±Рѕ 0xFF РґР»СЏ РѕС‡РёСЃС‚РєРё РІРёС…С–РґРЅРѕРіРѕ РјР°СЃРёРІСѓ
   FillByte(xBlocks[0], SizeOf(TQNX6_DB), $FF);
 
-  // Запис прямого рівня (нульовий або верхній рівень)
+  // Р—Р°РїРёСЃ РїСЂСЏРјРѕРіРѕ СЂС–РІРЅСЏ (РЅСѓР»СЊРѕРІРёР№ Р°Р±Рѕ РІРµСЂС…РЅС–Р№ СЂС–РІРµРЅСЊ)
   with Blocks.level[Blocks.top] do
     if Count > 0 then
       Move(Data[0], xBlocks[0], Count * SizeOf(DWord));
@@ -963,7 +963,7 @@ begin
     SetLength(buff, fBlockSize);
     srcData := nil;
 
-    // Проходимо з верхнього рівня вниз
+    // РџСЂРѕС…РѕРґРёРјРѕ Р· РІРµСЂС…РЅСЊРѕРіРѕ СЂС–РІРЅСЏ РІРЅРёР·
     while level > 0 do
     begin
       srcPos := 0;
@@ -980,7 +980,7 @@ begin
 
         FillByte(buff[0], fBlockSize, $FF);
 
-        // Копіювання блоку
+        // РљРѕРїС–СЋРІР°РЅРЅСЏ Р±Р»РѕРєСѓ
         srcData := @Blocks.level[level - 1].Data[srcPos];
         Move(srcData^, buff[0], toCopy * SizeOf(DWord));
 
@@ -1128,24 +1128,24 @@ var
   level1, level2: integer;
 begin
   Result := 0;
-  // Якщо блоків <= 16, вони всі влізуть в іноду (Level 0), додаткові блоки не потрібні
+  // РЇРєС‰Рѕ Р±Р»РѕРєС–РІ <= 16, РІРѕРЅРё РІСЃС– РІР»С–Р·СѓС‚СЊ РІ С–РЅРѕРґСѓ (Level 0), РґРѕРґР°С‚РєРѕРІС– Р±Р»РѕРєРё РЅРµ РїРѕС‚СЂС–Р±РЅС–
   if r2 <= 16 then Exit(0);
 
-  // Якщо ми тут, значить нам потрібен як мінімум Level 1.
-  // Кожен блок даних потребує запису свого покажчика в якийсь індексний блок.
+  // РЇРєС‰Рѕ РјРё С‚СѓС‚, Р·РЅР°С‡РёС‚СЊ РЅР°Рј РїРѕС‚СЂС–Р±РµРЅ СЏРє РјС–РЅС–РјСѓРј Level 1.
+  // РљРѕР¶РµРЅ Р±Р»РѕРє РґР°РЅРёС… РїРѕС‚СЂРµР±СѓС” Р·Р°РїРёСЃСѓ СЃРІРѕРіРѕ РїРѕРєР°Р¶С‡РёРєР° РІ СЏРєРёР№СЃСЊ С–РЅРґРµРєСЃРЅРёР№ Р±Р»РѕРє.
   level1 := iceil(r2, ptrs_in_block);
   Result := level1;
 
-  // Якщо рівень 1 не вміщається у 16 покажчиків іноди
-  // (тобто кількість індексних блоків > 16)
+  // РЇРєС‰Рѕ СЂС–РІРµРЅСЊ 1 РЅРµ РІРјС–С‰Р°С”С‚СЊСЃСЏ Сѓ 16 РїРѕРєР°Р¶С‡РёРєС–РІ С–РЅРѕРґРё
+  // (С‚РѕР±С‚Рѕ РєС–Р»СЊРєС–СЃС‚СЊ С–РЅРґРµРєСЃРЅРёС… Р±Р»РѕРєС–РІ > 16)
   if level1 > 16 then
   begin
     level2 := iceil(level1, ptrs_in_block);
     Result := Result + level2;
   end;
 
-  // Для QNX6 теоретично є і Level 3, але в реальних образах
-  // (особливо BlackBerry) він майже не зустрічається.
+  // Р”Р»СЏ QNX6 С‚РµРѕСЂРµС‚РёС‡РЅРѕ С” С– Level 3, Р°Р»Рµ РІ СЂРµР°Р»СЊРЅРёС… РѕР±СЂР°Р·Р°С…
+  // (РѕСЃРѕР±Р»РёРІРѕ BlackBerry) РІС–РЅ РјР°Р№Р¶Рµ РЅРµ Р·СѓСЃС‚СЂС–С‡Р°С”С‚СЊСЃСЏ.
 end;
 
 procedure TQNX6Fs.PreloadInodes(all: boolean = False);
@@ -1171,11 +1171,11 @@ var
   end;
 
 begin
-  // 🔐 Перевірка суперблоку
+  // рџ”ђ РџРµСЂРµРІС–СЂРєР° СЃСѓРїРµСЂР±Р»РѕРєСѓ
   if (not Assigned(fActiveSB)) or (not fActiveSB.isValid) then
     raise Exception.Create('fActiveSB is not set or invalid');
 
-  // 📊 Отримати параметри файлової системи
+  // рџ“Љ РћС‚СЂРёРјР°С‚Рё РїР°СЂР°РјРµС‚СЂРё С„Р°Р№Р»РѕРІРѕС— СЃРёСЃС‚РµРјРё
   with fActiveSB.fRawData do
   begin
     totalCount := num_inodes;
@@ -1184,11 +1184,11 @@ begin
     preloadCount := IfThen(all, totalCount, Min(totalCount, Trunc(usedCount * 1.2)));
   end;
 
-  // 📥 Завантаження буфера інодів
+  // рџ“Ґ Р—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ Р±СѓС„РµСЂР° С–РЅРѕРґС–РІ
   SetLength(Buff, preloadCount);
   LoadBlockData(fInodesBlocks, @Buff[0], preloadCount * SizeOf(TQNX6_DInode), fBlockSize);
 
-  // ♻️ Скидання стану
+  // в™»пёЏ РЎРєРёРґР°РЅРЅСЏ СЃС‚Р°РЅСѓ
   fFreeInodes.Clear;
   UsedInodesList.Clear;
   cacheDInodes.Clear;
@@ -1196,14 +1196,14 @@ begin
   countedUsed := 0;
   currentInode := 1;
 
-  // 🔄 Попереднє кешування
+  // рџ”„ РџРѕРїРµСЂРµРґРЅС” РєРµС€СѓРІР°РЅРЅСЏ
   while (currentInode <= preloadCount) and ((all) or (countedUsed < usedCount)) do
   begin
     AddInode(currentInode, Buff[currentInode - 1]);
     Inc(currentInode);
   end;
 
-  // 🧲 Довантаження при need
+  // рџ§І Р”РѕРІР°РЅС‚Р°Р¶РµРЅРЅСЏ РїСЂРё need
   while (not all) and (countedUsed < usedCount) and (currentInode <= totalCount) do
   begin
     inode := GetInode(currentInode);
@@ -1211,7 +1211,7 @@ begin
     Inc(currentInode);
   end;
 
-  // 📍 Після останнього використаного — перший вільний
+  // рџ“Ќ РџС–СЃР»СЏ РѕСЃС‚Р°РЅРЅСЊРѕРіРѕ РІРёРєРѕСЂРёСЃС‚Р°РЅРѕРіРѕ вЂ” РїРµСЂС€РёР№ РІС–Р»СЊРЅРёР№
   fFirstFreeInode := currentInode;
   fInodesLoaded := True;
 end;
@@ -1359,12 +1359,12 @@ var
 begin
   with fActiveSB.fRawData.s_iextra do
   begin
-    // Завантажуємо блоки та дані у внутрішній буфер
+    // Р—Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ Р±Р»РѕРєРё С‚Р° РґР°РЅС– Сѓ РІРЅСѓС‚СЂС–С€РЅС–Р№ Р±СѓС„РµСЂ
     LoadBlocks(blocks, indirect, size, fIExtraBlocks);
     SetLength(fIExtraRaw, size);
     LoadBlockData(fIExtraBlocks, @fIExtraRaw[0], size, fBlockSize);
 
-    // Збереження у файл для аналізу
+    // Р—Р±РµСЂРµР¶РµРЅРЅСЏ Сѓ С„Р°Р№Р» РґР»СЏ Р°РЅР°Р»С–Р·Сѓ
     if size > 0 then
     begin
       FileStream := TFileStream.Create('qnx6_iextra_dump.bin', fmCreate);
@@ -1413,13 +1413,13 @@ begin
   begin
     with fActiveSB.fRawData do
     begin
-      // Логування змінених інодів
+      // Р›РѕРіСѓРІР°РЅРЅСЏ Р·РјС–РЅРµРЅРёС… С–РЅРѕРґС–РІ
       for idx in changedInodes do
         if cacheDInodes.TryGetValue(idx, inode) then
         begin
-          // Логування номеру іноду
+          // Р›РѕРіСѓРІР°РЅРЅСЏ РЅРѕРјРµСЂСѓ С–РЅРѕРґСѓ
           {$IFDEF DEBUG}
-          WriteLn('Flushing inode: ', idx);  // Логування іноду
+          WriteLn('Flushing inode: ', idx);  // Р›РѕРіСѓРІР°РЅРЅСЏ С–РЅРѕРґСѓ
           {$ENDIF}
 
           fStream.Position := inodePos(idx);
@@ -1427,22 +1427,22 @@ begin
         end;
       changedInodes.Clear;
 
-      // Логування змінених блоків
+      // Р›РѕРіСѓРІР°РЅРЅСЏ Р·РјС–РЅРµРЅРёС… Р±Р»РѕРєС–РІ
       for Pair in changedBlocks do
       begin
         osize := Length(Pair.Value);
-        // Логування сектору (блоку)
+        // Р›РѕРіСѓРІР°РЅРЅСЏ СЃРµРєС‚РѕСЂСѓ (Р±Р»РѕРєСѓ)
         {$IFDEF DEBUG}
         WriteLn('Flushing block sector: ', Pair.Key, ' with size: ', osize);
         {$ENDIF}
-        // Логування сектору
+        // Р›РѕРіСѓРІР°РЅРЅСЏ СЃРµРєС‚РѕСЂСѓ
 
         fStream.Position := dataStart + Pair.Key * fBlockSize;
         fStream.Write(Pair.Value[0], osize);
       end;
       changedBlocks.Clear;
 
-      // Збереження блоків довгих імен (якщо зміни є)
+      // Р—Р±РµСЂРµР¶РµРЅРЅСЏ Р±Р»РѕРєС–РІ РґРѕРІРіРёС… С–РјРµРЅ (СЏРєС‰Рѕ Р·РјС–РЅРё С”)
       fDirectWrite := True;
       if fChangedLong then
       begin
@@ -1450,12 +1450,12 @@ begin
         lnames.size := fLongNameBlocks.level[0].Count * fBlockSize;
       end;
 
-      // Збереження bitmap
+      // Р—Р±РµСЂРµР¶РµРЅРЅСЏ bitmap
       SaveBlockData(fBitmapBlocks, fBitmap.BitsPtr, bitmap.size, fBlockSize);
       fDirectWrite := False;
     end;
 
-    // Логування запису SuperBlock
+    // Р›РѕРіСѓРІР°РЅРЅСЏ Р·Р°РїРёСЃСѓ SuperBlock
     if fActiveSB = fSB0 then
     begin
       {$IFDEF DEBUG}
@@ -1464,7 +1464,7 @@ begin
       fActiveSB.Write;
     end;
 
-    // Логування запису BootBlock
+    // Р›РѕРіСѓРІР°РЅРЅСЏ Р·Р°РїРёСЃСѓ BootBlock
     if fBB <> nil then
       TQNX6_BootBlock(fBB).Write;
 
@@ -1521,7 +1521,7 @@ begin
   LoadInodeBlocks(idx, Blocks);
   LoadBlockData(Blocks, @RDI[0], inode.size, fBlockSize);
 
-  // Очистити невалідні записи (inode == 0 або $FFFFFFFF)
+  // РћС‡РёСЃС‚РёС‚Рё РЅРµРІР°Р»С–РґРЅС– Р·Р°РїРёСЃРё (inode == 0 Р°Р±Рѕ $FFFFFFFF)
   for i := High(RDI) downto 0 do
     if (RDI[i].inode = 0) or (RDI[i].inode = $FFFFFFFF) then
       Delete(RDI, i, 1);
@@ -1546,11 +1546,11 @@ begin
   blockCount := ifThen(entrySize = 0, 0, iceil(entrySize, fBlockSize));
   totalSize := blockCount * fBlockSize;
 
-  // Оновити розмір inode при зміні розміру директорії
+  // РћРЅРѕРІРёС‚Рё СЂРѕР·РјС–СЂ inode РїСЂРё Р·РјС–РЅС– СЂРѕР·РјС–СЂСѓ РґРёСЂРµРєС‚РѕСЂС–С—
   if Inodes[idx].size <> totalSize then
     SetSize(idx, totalSize);
 
-  // Якщо записів нема — просто видаляємо з кешу
+  // РЇРєС‰Рѕ Р·Р°РїРёСЃС–РІ РЅРµРјР° вЂ” РїСЂРѕСЃС‚Рѕ РІРёРґР°Р»СЏС”РјРѕ Р· РєРµС€Сѓ
   if blockCount = 0 then
   begin
     cacheIDirs.Remove(idx);
@@ -1559,7 +1559,7 @@ begin
     Exit;
   end;
 
-  // Пишемо вміст
+  // РџРёС€РµРјРѕ РІРјС–СЃС‚
   SetLength(buff, totalSize);
   if entrySize > 0 then
     Move(RDI[0], buff[0], entrySize);
@@ -1649,10 +1649,10 @@ begin
   blockIdx := fLongNameBlocks.level[0].Data[idx];
   ReadBlock(blockIdx, @tmp, SizeOf(TQNX6_LongName));
 
-  // Створення UTF-8 рядка з ім’я
+  // РЎС‚РІРѕСЂРµРЅРЅСЏ UTF-8 СЂСЏРґРєР° Р· С–РјвЂ™СЏ
   Result := Copy(PChar(@tmp.Name[0]), 1, tmp.len);
 
-  // Контрольна сума
+  // РљРѕРЅС‚СЂРѕР»СЊРЅР° СЃСѓРјР°
   if (chk <> 0) and ((fActiveSB.flags and QNX6FS_LFN_CKSUM) = QNX6FS_LFN_CKSUM) then
   begin
     chk2 := qnx6_lfile_checksum(@tmp.Name[0], tmp.len);
@@ -1709,7 +1709,7 @@ begin
     Exit;
   end;
 
-  // Додаємо звичайний блок
+  // Р”РѕРґР°С”РјРѕ Р·РІРёС‡Р°Р№РЅРёР№ Р±Р»РѕРє
   newBlock := AllocateBlocks(1, system);
   if Length(newBlock) = 0 then
   begin
@@ -1720,14 +1720,14 @@ begin
   blk := newBlock[0];
   Result := blk;
 
-  // Визначення рівня індексації
+  // Р’РёР·РЅР°С‡РµРЅРЅСЏ СЂС–РІРЅСЏ С–РЅРґРµРєСЃР°С†С–С—
   if Blocks.level[0].Count < QNX6FS_DIRECT_BLKS then
   begin
     Blocks.top := 0;
   end
   else
   begin
-    // Потрібен перехід на single indirect
+    // РџРѕС‚СЂС–Р±РµРЅ РїРµСЂРµС…С–Рґ РЅР° single indirect
     if (Blocks.level[1].Count < QNX6FS_DIRECT_BLKS) and
       ((Blocks.level[0].Count mod ptrs_in_block = 0) or (Blocks.level[0].Count =
       QNX6FS_DIRECT_BLKS)) then
@@ -1738,7 +1738,7 @@ begin
       Inc(Blocks.level[1].Count);
     end;
 
-    // Потрібен перехід на double indirect
+    // РџРѕС‚СЂС–Р±РµРЅ РїРµСЂРµС…С–Рґ РЅР° double indirect
     if (Blocks.level[2].Count < QNX6FS_DIRECT_BLKS) and
       ((Blocks.level[1].Count mod ptrs_in_block = 0) or (Blocks.level[1].Count =
       QNX6FS_DIRECT_BLKS)) then
@@ -1750,7 +1750,7 @@ begin
     end;
   end;
 
-  // Запис блоку у level 0
+  // Р—Р°РїРёСЃ Р±Р»РѕРєСѓ Сѓ level 0
   Insert(blk, Blocks.level[0].Data, Blocks.level[0].Count);
   Inc(Blocks.level[0].Count);
 end;
@@ -1763,7 +1763,7 @@ begin
   Result := [];
   c0_old := Blocks.level[0].Count;
 
-  // Якщо індекс не вказано — шукаємо по значенню
+  // РЇРєС‰Рѕ С–РЅРґРµРєСЃ РЅРµ РІРєР°Р·Р°РЅРѕ вЂ” С€СѓРєР°С”РјРѕ РїРѕ Р·РЅР°С‡РµРЅРЅСЋ
   if idx = -1 then
     for i := 0 to Pred(c0_old) do
       if Blocks.level[0].Data[i] = id then
@@ -1774,17 +1774,17 @@ begin
 
   if (idx < 0) or (idx >= Blocks.level[0].Count) then Exit;
 
-  // Видаляємо сам блок
+  // Р’РёРґР°Р»СЏС”РјРѕ СЃР°Рј Р±Р»РѕРє
   Delete(Blocks.level[0].Data, idx, 1);
   Dec(Blocks.level[0].Count);
   Result := [id];
 
-  // Якщо використовуються рівні індексації
+  // РЇРєС‰Рѕ РІРёРєРѕСЂРёСЃС‚РѕРІСѓСЋС‚СЊСЃСЏ СЂС–РІРЅС– С–РЅРґРµРєСЃР°С†С–С—
   if Blocks.top > 0 then
   begin
     if iceil(Blocks.level[0].Count, ptrs_in_block) < iceil(c0_old, ptrs_in_block) then
     begin
-      // Потрібно звільнити блок 1-го рівня
+      // РџРѕС‚СЂС–Р±РЅРѕ Р·РІС–Р»СЊРЅРёС‚Рё Р±Р»РѕРє 1-РіРѕ СЂС–РІРЅСЏ
       c1_old := Blocks.level[1].Count;
       Dec(Blocks.level[1].Count);
       removed := Blocks.level[1].Data[Blocks.level[1].Count];
@@ -1792,7 +1792,7 @@ begin
 
       Insert(removed, Result, 0);
 
-      // Можливо, треба ще й блок 2-го рівня
+      // РњРѕР¶Р»РёРІРѕ, С‚СЂРµР±Р° С‰Рµ Р№ Р±Р»РѕРє 2-РіРѕ СЂС–РІРЅСЏ
       if (Blocks.top = 2) and (iceil(Blocks.level[1].Count, ptrs_in_block) <
         iceil(c1_old, ptrs_in_block)) then
       begin
@@ -1824,10 +1824,10 @@ begin
 
   FillChar(entry.Data[0], SizeOf(entry.Data), 0);
 
-  // Спочатку — довге ім’я
+  // РЎРїРѕС‡Р°С‚РєСѓ вЂ” РґРѕРІРіРµ С–РјвЂ™СЏ
   if (c > QNX6FS_DIR_SHORT_LEN) then
   begin
-    // Отримати або створити індекс довгого імені
+    // РћС‚СЂРёРјР°С‚Рё Р°Р±Рѕ СЃС‚РІРѕСЂРёС‚Рё С–РЅРґРµРєСЃ РґРѕРІРіРѕРіРѕ С–РјРµРЅС–
     k := fLongNames.IndexOf(NewName);
     if k < 0 then
     begin
@@ -1845,7 +1845,7 @@ begin
         fChangedLong := True;
     end;
 
-    // Запис мета-інформації про ім’я
+    // Р—Р°РїРёСЃ РјРµС‚Р°-С–РЅС„РѕСЂРјР°С†С–С— РїСЂРѕ С–РјвЂ™СЏ
     longEntry := PQNX6_LongNameEntry(@entry.Data[0]);
     longEntry^.blkno := k;
     entry.len := QNX6FS_DIR_LONGNAME;
@@ -1866,7 +1866,7 @@ begin
   end
   else
   begin
-    // Коротке ім’я
+    // РљРѕСЂРѕС‚РєРµ С–РјвЂ™СЏ
     entry.len := c;
     Move(NewName[1], entry.Data[0], c);
   end;
@@ -1895,7 +1895,7 @@ var
   blockNo: DWord;
   n, found: integer;
 begin
-  SetLength(Result, 0); // явна ініціалізація
+  SetLength(Result, 0); // СЏРІРЅР° С–РЅС–С†С–Р°Р»С–Р·Р°С†С–СЏ
 
   if Count <= 0 then
     Exit;
@@ -1925,7 +1925,7 @@ begin
   end;
   {$ENDIF}
 
-  // Дозаповнення через bitmap, якщо потрібно
+  // Р”РѕР·Р°РїРѕРІРЅРµРЅРЅСЏ С‡РµСЂРµР· bitmap, СЏРєС‰Рѕ РїРѕС‚СЂС–Р±РЅРѕ
   if found < Count then
   begin
     if System then
@@ -1948,7 +1948,7 @@ begin
   end;
 
   if found < Count then
-    SetLength(Result, found); // Повертаємо лише доступні блоки
+    SetLength(Result, found); // РџРѕРІРµСЂС‚Р°С”РјРѕ Р»РёС€Рµ РґРѕСЃС‚СѓРїРЅС– Р±Р»РѕРєРё
 
   if found > 0 then
     fChanged := True
@@ -1965,7 +1965,7 @@ begin
 
   for k in blocks do
   begin
-    if k >= total then Continue; // Захист від виходу за межі
+    if k >= total then Continue; // Р—Р°С…РёСЃС‚ РІС–Рґ РІРёС…РѕРґСѓ Р·Р° РјРµР¶С–
 
     fBitmap.Clear(k);
     fFreeBlocks.Enqueue(k);
@@ -1986,7 +1986,7 @@ var
 begin
   if buff = nil then Exit;
 
-  // Визначення фактичного розміру читання
+  // Р’РёР·РЅР°С‡РµРЅРЅСЏ С„Р°РєС‚РёС‡РЅРѕРіРѕ СЂРѕР·РјС–СЂСѓ С‡РёС‚Р°РЅРЅСЏ
   if isize = 0 then
     blockSizeToRead := fBlockSize
   else
@@ -1994,23 +1994,23 @@ begin
 
   translatedIdx := idx;
 
-  // Перевірка на переповнення і межі
+  // РџРµСЂРµРІС–СЂРєР° РЅР° РїРµСЂРµРїРѕРІРЅРµРЅРЅСЏ С– РјРµР¶С–
   if translatedIdx > (High(QWord) div fBlockSize) then
     raise Exception.Create('Block index too large');
 
   fStream.Position := dataStart + translatedIdx * QWord(fBlockSize);
 
-  // Безпечне читання
+  // Р‘РµР·РїРµС‡РЅРµ С‡РёС‚Р°РЅРЅСЏ
   readCount := fStream.Read(buff^, blockSizeToRead);
   if readCount < blockSizeToRead then
     FillChar(pbyte(buff)[readCount], blockSizeToRead - readCount, 0);
 
-  // Якщо блок змінений – оновлюємо
+  // РЇРєС‰Рѕ Р±Р»РѕРє Р·РјС–РЅРµРЅРёР№ вЂ“ РѕРЅРѕРІР»СЋС”РјРѕ
   if changedBlocks.TryGetValue(idx, Data) then
   begin
     if Length(Data) < blockSizeToRead then
     begin
-      // Захист від переписування лише частини буфера
+      // Р—Р°С…РёСЃС‚ РІС–Рґ РїРµСЂРµРїРёСЃСѓРІР°РЅРЅСЏ Р»РёС€Рµ С‡Р°СЃС‚РёРЅРё Р±СѓС„РµСЂР°
       Move(Data[0], buff^, Length(Data));
       FillChar(pbyte(buff)[Length(Data)], blockSizeToRead - Length(Data), 0);
     end
@@ -2024,24 +2024,24 @@ procedure TQNX6Fs.EraseInode(idx: DWord);
 var
   dinode: TQNX6_DInode;
 begin
-  // Перевірка на коректний індекс
+  // РџРµСЂРµРІС–СЂРєР° РЅР° РєРѕСЂРµРєС‚РЅРёР№ С–РЅРґРµРєСЃ
   if (idx = 0) or (idx > fActiveSB.num_inodes) then
     Exit;
 
   dinode := Default(TQNX6_DInode);
-  // Обнулити інод
+  // РћР±РЅСѓР»РёС‚Рё С–РЅРѕРґ
   SetInode(idx, dinode);
 
-  // Додати до черги вільних інодів
+  // Р”РѕРґР°С‚Рё РґРѕ С‡РµСЂРіРё РІС–Р»СЊРЅРёС… С–РЅРѕРґС–РІ
   fFreeInodes.Enqueue(idx);
 
   Inc(fActiveSB.fRawData.free_inodes);
 
-  // Очистити кеші
+  // РћС‡РёСЃС‚РёС‚Рё РєРµС€С–
   cacheDInodes.AddOrSetValue(idx, dinode);
   cacheBlocksChains.Remove(idx);
   //cacheBlocksChains.AddOrSetValue(idx, Default(TBlocksList));
-  UsedInodesList.Remove(idx); // якщо існує
+  UsedInodesList.Remove(idx); // СЏРєС‰Рѕ С–СЃРЅСѓС”
 
   fChanged := True;
 
@@ -2337,7 +2337,7 @@ function TQNX6Fs.InodeUsed(idx: DWord): boolean;
 var
   dinode: TQNX6_DInode;
 begin
-  // Перевірка на межі
+  // РџРµСЂРµРІС–СЂРєР° РЅР° РјРµР¶С–
   if (idx = 0) or (idx > fActiveSB.num_inodes) then
     Exit(False);
 
@@ -2655,8 +2655,8 @@ var
   ln, Name: utf8string;
   HasDot, HasDotDot: boolean;
   UnusedInodes: integer;
-  TotalFileSize: int64;      // <-- додано
-  ImageSize: int64;          // <-- додано
+  TotalFileSize: int64;      // <-- РґРѕРґР°РЅРѕ
+  ImageSize: int64;          // <-- РґРѕРґР°РЅРѕ
 begin
   if not Assigned(Errors) then
     Errors := TStringList.Create;
@@ -2679,21 +2679,21 @@ begin
     //if not fInodesLoaded then
     PreloadInodes(True);
 
-    TConsole.WriteLn('→ Checking inodes');
+    TConsole.WriteLn('в†’ Checking inodes');
     for i in UsedInodesList do
     begin
       Inode := GetInode(i);
 
       if Inode.mode = 0 then
       begin
-        Errors.Add(Format('❌ Inode #%d has zero mode (uninitialized)', [i]));
+        Errors.Add(Format('вќЊ Inode #%d has zero mode (uninitialized)', [i]));
         Continue;
       end;
 
       if Inode.size > fMaxBlocks * fBlockSize then
-        Errors.Add(Format('❌ Inode #%d: size too large (%d bytes)', [int64(i), int64(Inode.size)]));
+        Errors.Add(Format('вќЊ Inode #%d: size too large (%d bytes)', [int64(i), int64(Inode.size)]));
 
-      // Підрахунок загального розміру файлів
+      // РџС–РґСЂР°С…СѓРЅРѕРє Р·Р°РіР°Р»СЊРЅРѕРіРѕ СЂРѕР·РјС–СЂСѓ С„Р°Р№Р»С–РІ
       Inc(TotalFileSize, Inode.size);
 
       LoadInodeBlocks(i, Blocks);
@@ -2701,13 +2701,13 @@ begin
         for blk in Blocks.level[j].Data do
         begin
           if (blk >= fBitmap.Size) then
-            Errors.Add(Format('❌ Inode #%d references out-of-range block %d', [int64(i), int64(blk)]))
+            Errors.Add(Format('вќЊ Inode #%d references out-of-range block %d', [int64(i), int64(blk)]))
           else
           begin
             if blk <> 0 then
             begin
               if seenBlocks[blk] then
-                Errors.Add(Format('❌ Duplicate block %d referenced by inode #%d', [int64(blk), int64(i)]))
+                Errors.Add(Format('вќЊ Duplicate block %d referenced by inode #%d', [int64(blk), int64(i)]))
               else
                 seenBlocks[blk] := True;
 
@@ -2717,7 +2717,7 @@ begin
         end;
     end;
 
-    TConsole.WriteLn('→ Checking directories');
+    TConsole.WriteLn('в†’ Checking directories');
     for i in UsedInodesList do
     begin
       Inode := GetInode(i);
@@ -2725,7 +2725,7 @@ begin
       begin
         if ReadDirectory(i, DE) < 0 then
         begin
-          Errors.Add(Format('❌ Failed to read directory at inode #%d', [i]));
+          Errors.Add(Format('вќЊ Failed to read directory at inode #%d', [i]));
           Continue;
         end;
 
@@ -2736,7 +2736,7 @@ begin
           begin
 
             if not isValidInode(DE[j].inode) then
-              Errors.Add(Format('❌ Directory inode #%d references invalid inode %d ("%s")',
+              Errors.Add(Format('вќЊ Directory inode #%d references invalid inode %d ("%s")',
                 [int64(i), int64(DE[j].inode), Name]))
             else
             begin
@@ -2746,24 +2746,24 @@ begin
               if Name = '..' then HasDotDot := True;
 
               if Copy(Name, 1, 7) = 'DAMAGED' then
-                Errors.Add(Format('❌ Directory #%d contains entry "%s" pointing to unallocated inode %d',
+                Errors.Add(Format('вќЊ Directory #%d contains entry "%s" pointing to unallocated inode %d',
                   [i, Name, DE[j].inode]))
               else if not UsedInodesList.Contains(DE[j].inode) then
-                Errors.Add(Format('❌ Directory #%d contains entry "%s" pointing to unallocated inode %d',
+                Errors.Add(Format('вќЊ Directory #%d contains entry "%s" pointing to unallocated inode %d',
                   [i, Name, DE[j].inode]))
               else
               begin
                 target := GetInode(DE[j].inode);
                 if target.mode = 0 then
-                  Errors.Add(Format('❌ Directory #%d entry "%s" points to cleared inode #%d (mode = 0)',
+                  Errors.Add(Format('вќЊ Directory #%d entry "%s" points to cleared inode #%d (mode = 0)',
                     [i, Name, DE[j].inode]));
 
                 if (Name = '.') and (DE[j].inode <> i) then
-                  Errors.Add(Format('❌ Directory #%d: "." entry points to inode #%d instead of self',
+                  Errors.Add(Format('вќЊ Directory #%d: "." entry points to inode #%d instead of self',
                     [i, DE[j].inode]));
 
                 if (Name = '..') and (i = 1) and (DE[j].inode <> 1) then
-                  Errors.Add(Format('❌ Root directory ".." must point to itself (inode 1), got %d',
+                  Errors.Add(Format('вќЊ Root directory ".." must point to itself (inode 1), got %d',
                     [DE[j].inode]));
               end;
             end;
@@ -2781,12 +2781,12 @@ begin
             {$ENDIF}
           end;
 
-        if not HasDot then Errors.Add(Format('❌ Directory #%d missing "." entry', [i]));
-        if not HasDotDot then Errors.Add(Format('❌ Directory #%d missing ".." entry', [i]));
+        if not HasDot then Errors.Add(Format('вќЊ Directory #%d missing "." entry', [i]));
+        if not HasDotDot then Errors.Add(Format('вќЊ Directory #%d missing ".." entry', [i]));
       end;
     end;
 
-    TConsole.WriteLn('→ Checking link counts');
+    TConsole.WriteLn('в†’ Checking link counts');
     for i in UsedInodesList do
     begin
       Inode := GetInode(i);
@@ -2800,7 +2800,7 @@ begin
       {$ENDIF}
         if Inode.nlink <> actualNlink then
         begin
-          Errors.Add(Format('❌ Inode #%d: nlink=%d, actual references=%d', [i, Inode.nlink, actualNlink]));
+          Errors.Add(Format('вќЊ Inode #%d: nlink=%d, actual references=%d', [i, Inode.nlink, actualNlink]));
           if Fix then
           begin
             Inode.nlink := actualNlink;
@@ -2810,7 +2810,7 @@ begin
       end
       else if Inode.nlink > 0 then
       begin
-        Errors.Add(Format('❌ Inode #%d: has nlink=%d but no directory references', [i, Inode.nlink]));
+        Errors.Add(Format('вќЊ Inode #%d: has nlink=%d but no directory references', [i, Inode.nlink]));
         if Fix then
         begin
           Inode.nlink := 0;
@@ -2819,7 +2819,7 @@ begin
       end;
     end;
 
-    TConsole.WriteLn('→ Checking for orphan initialized inodes');
+    TConsole.WriteLn('в†’ Checking for orphan initialized inodes');
     fInodeCount := GetInodeCount;
     for i := 0 to fInodeCount - 1 do
     begin
@@ -2827,11 +2827,11 @@ begin
       begin
         Inode := GetInode(i);
         if Inode.mode <> 0 then
-          Errors.Add(Format('⚠ Inode #%d is initialized (mode=%o) but unused (orphan)', [i, Inode.mode]));
+          Errors.Add(Format('вљ  Inode #%d is initialized (mode=%o) but unused (orphan)', [i, Inode.mode]));
       end;
     end;
 
-    TConsole.WriteLn('→ Counting unused but initialized inodes');
+    TConsole.WriteLn('в†’ Counting unused but initialized inodes');
     for i := 1 to fInodeCount - 1 do
     begin
       if not UsedInodesList.Contains(i) then
@@ -2842,24 +2842,24 @@ begin
       end;
     end;
     if UnusedInodes > 0 then
-      TConsole.WriteLn(Format('⚠ Found %d unused but initialized inodes', [UnusedInodes]));
+      TConsole.WriteLn(Format('вљ  Found %d unused but initialized inodes', [UnusedInodes]));
 
     if fLongNameBlocks.level[0].Count > 0 then
     begin
-      TConsole.WriteLn('→ Checking long names');
+      TConsole.WriteLn('в†’ Checking long names');
       for i := 0 to fLongNameBlocks.level[0].Count - 1 do
       begin
         try
           ln := GetLongName(i);
           if ln = '' then
-            Errors.Add(Format('⚠ Empty longname at block #%d', [i]));
+            Errors.Add(Format('вљ  Empty longname at block #%d', [i]));
         except
           on E: Exception do
-            Errors.Add(Format('❌ Invalid longname at block %d: %s', [i, E.Message]));
+            Errors.Add(Format('вќЊ Invalid longname at block %d: %s', [i, E.Message]));
         end;
       end;
 
-      TConsole.WriteLn('→ Marking longname blocks as used');
+      TConsole.WriteLn('в†’ Marking longname blocks as used');
       for j := 0 to fLongNameBlocks.top do
       begin
         for i := 0 to fLongNameBlocks.level[j].Count - 1 do
@@ -2868,50 +2868,50 @@ begin
           if blk < fBitmap.Size then
             claimedBlocks[blk] := True
           else
-            Errors.Add(Format('❌ Longname block %d out of range (level %d)', [blk, j]));
+            Errors.Add(Format('вќЊ Longname block %d out of range (level %d)', [blk, j]));
         end;
       end;
     end;
 
-    TConsole.WriteLn('→ Checking bitmap consistency');
+    TConsole.WriteLn('в†’ Checking bitmap consistency');
     for i := fUserAreaStart to fBitmap.Size - 1 do
     begin
       if fBitmap.Bits[i] and (not claimedBlocks[i]) then
       begin
-        Errors.Add(Format('❌ Block %d is marked used in bitmap but not referenced by any inode', [i]));
+        Errors.Add(Format('вќЊ Block %d is marked used in bitmap but not referenced by any inode', [i]));
         if Fix then fBitmap.Clear(i);
       end;
 
       if (not fBitmap.Bits[i]) and claimedBlocks[i] then
       begin
-        Errors.Add(Format('❌ Block %d is referenced by inodes but not marked used in bitmap', [i]));
+        Errors.Add(Format('вќЊ Block %d is referenced by inodes but not marked used in bitmap', [i]));
         if Fix then fBitmap.SetOn(i);
       end;
     end;
 
 
-    // --- Додано блок порівняння розміру файлів і образу ---
+    // --- Р”РѕРґР°РЅРѕ Р±Р»РѕРє РїРѕСЂС–РІРЅСЏРЅРЅСЏ СЂРѕР·РјС–СЂСѓ С„Р°Р№Р»С–РІ С– РѕР±СЂР°Р·Сѓ ---
     ImageSize := fStream.Size;
-    TConsole.WriteLn(Format('→ Total file data size: %.2f MB', [TotalFileSize / (1024 * 1024)]));
-    TConsole.WriteLn(Format('→ Image file size: %.2f MB', [ImageSize / (1024 * 1024)]));
+    TConsole.WriteLn(Format('в†’ Total file data size: %.2f MB', [TotalFileSize / (1024 * 1024)]));
+    TConsole.WriteLn(Format('в†’ Image file size: %.2f MB', [ImageSize / (1024 * 1024)]));
 
     if ImageSize > TotalFileSize * 2 then
-      Errors.Add(Format('⚠ Image size (%.2f MB) is significantly larger than total file data (%.2f MB)',
+      Errors.Add(Format('вљ  Image size (%.2f MB) is significantly larger than total file data (%.2f MB)',
         [ImageSize / (1024 * 1024), TotalFileSize / (1024 * 1024)]));
     // ------------------------------------------------------
 
 
     if Fix and (Errors.Count > 0) then
     begin
-      TConsole.WriteLn('→ Changes applied (Fix=True), flushing changes...');
+      TConsole.WriteLn('в†’ Changes applied (Fix=True), flushing changes...');
       fChanged := True;
       Flush;
     end;
 
     if Errors.Count = 0 then
-      TConsole.WriteLn('✔ Fsck finished: no errors found')
+      TConsole.WriteLn('вњ” Fsck finished: no errors found')
     else
-      TConsole.WriteLn(Format('⚠ Fsck finished: %d errors/warnings found', [Errors.Count]));
+      TConsole.WriteLn(Format('вљ  Fsck finished: %d errors/warnings found', [Errors.Count]));
 
   finally
     seenBlocks.Free;

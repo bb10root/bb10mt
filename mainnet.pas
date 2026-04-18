@@ -282,14 +282,14 @@ var
 begin
   FLog.AddMessage(Format('Authenticating with target %s:4455', [FIP]));
 
-  // Читаємо заголовки та невикористовувані поля
+  // Р§РёС‚Р°С”РјРѕ Р·Р°РіРѕР»РѕРІРєРё С‚Р° РЅРµРІРёРєРѕСЂРёСЃС‚РѕРІСѓРІР°РЅС– РїРѕР»СЏ
   EntireLength := BEtoN(PWord(@Data[0])^);
   Version := BEtoN(PWord(@Data[2])^);
   Code := BEtoN(PWord(@Data[4])^);
 
-  // Пропускаємо 2 невідомі word
+  // РџСЂРѕРїСѓСЃРєР°С”РјРѕ 2 РЅРµРІС–РґРѕРјС– word
   // SessionKeyLength := LEtoN(PWord(@Data[8])^);
-  // тимчасово використано для пропуску
+  // С‚РёРјС‡Р°СЃРѕРІРѕ РІРёРєРѕСЂРёСЃС‚Р°РЅРѕ РґР»СЏ РїСЂРѕРїСѓСЃРєСѓ
   SourceLength := LEtoN(PWord(@Data[10])^);
   SessionKeyLength := LEtoN(PWord(@Data[12])^);
   SessionKeyType := LEtoN(PWord(@Data[14])^);
@@ -300,17 +300,17 @@ begin
   ExpectedSignatureType := LEtoN(PWord(@Data[24])^);
   ContainerKeyVersion := LEtoN(PCardinal(@Data[26])^);
 
-  // Читаємо sourceName
+  // Р§РёС‚Р°С”РјРѕ sourceName
   SetLength(SourceName, SourceLength);
   if SourceLength > 0 then
     Move(Data[30], SourceName[0], SourceLength);
 
-  // Читаємо encryptedBlob
+  // Р§РёС‚Р°С”РјРѕ encryptedBlob
   SetLength(EncryptedBlob, ContainerLength);
   if ContainerLength > 0 then
     Move(Data[30 + SourceLength], EncryptedBlob[0], ContainerLength);
 
-  // Розшифровуємо приватним ключем
+  // Р РѕР·С€РёС„СЂРѕРІСѓС”РјРѕ РїСЂРёРІР°С‚РЅРёРј РєР»СЋС‡РµРј
   RSA := TRsa.Create;
   try
     RSA.LoadFromPrivateKey(FPrivKey);
@@ -319,7 +319,7 @@ begin
     FreeAndNil(RSA);
   end;
 
-  // Виклик функції обробки відповіді
+  // Р’РёРєР»РёРє С„СѓРЅРєС†С–С— РѕР±СЂРѕР±РєРё РІС–РґРїРѕРІС–РґС–
   replyChallenge(ServerChallenge);
 end;
 
@@ -444,19 +444,19 @@ var
   Packet: TBytes;
   i: integer;
 begin
-  // Створюємо і генеруємо RSA 1024-бітний ключ
+  // РЎС‚РІРѕСЂСЋС”РјРѕ С– РіРµРЅРµСЂСѓС”РјРѕ RSA 1024-Р±С–С‚РЅРёР№ РєР»СЋС‡
   Rsa := TRsa.Create;
   try
-    Rsa.Generate(1024); // аналог RSA_generate_key_ex
+    Rsa.Generate(1024); // Р°РЅР°Р»РѕРі RSA_generate_key_ex
 
-    // Зберігаємо публічний ключ (ASN.1 DER або наш формат)
+    // Р—Р±РµСЂС–РіР°С”РјРѕ РїСѓР±Р»С–С‡РЅРёР№ РєР»СЋС‡ (ASN.1 DER Р°Р±Рѕ РЅР°С€ С„РѕСЂРјР°С‚)
     PubKey := Rsa.SavePublicKey;
 
-    // Отримуємо modulus (n) у big-endian
+    // РћС‚СЂРёРјСѓС”РјРѕ modulus (n) Сѓ big-endian
     if Length(PubKey.Modulus) > 128 then
       raise Exception.Create('Modulus > 128 bytes!');
 
-    // Формуємо пакет (8 байт заголовок + 128 байт modulus)
+    // Р¤РѕСЂРјСѓС”РјРѕ РїР°РєРµС‚ (8 Р±Р°Р№С‚ Р·Р°РіРѕР»РѕРІРѕРє + 128 Р±Р°Р№С‚ modulus)
     SetLength(Packet, 8 + Length(PubKey.Modulus));
     PWord(@Packet[0])^ := NtoBE(word(8 + Length(PubKey.Modulus)));
     PWord(@Packet[2])^ := NtoBE(word(2));
@@ -465,11 +465,11 @@ begin
 
     move(PubKey.Modulus[1], Packet[8], Length(PubKey.Modulus));
 
-    // Відправляємо по сокету
+    // Р’С–РґРїСЂР°РІР»СЏС”РјРѕ РїРѕ СЃРѕРєРµС‚Сѓ
     FSocket.SendBuffer(@Packet[0], Length(Packet));
 
-    // Зберігаємо приватний ключ у полі класу
-    Rsa.SavePrivateKey(FPrivKey); // можна у PEM чи DER
+    // Р—Р±РµСЂС–РіР°С”РјРѕ РїСЂРёРІР°С‚РЅРёР№ РєР»СЋС‡ Сѓ РїРѕР»С– РєР»Р°СЃСѓ
+    Rsa.SavePrivateKey(FPrivKey); // РјРѕР¶РЅР° Сѓ PEM С‡Рё DER
   finally
     Rsa.Free;
   end;
@@ -575,10 +575,10 @@ var
   IV: TAesBlock;
   OutLen: integer;
 begin
-  // Генеруємо IV 16 байт
+  // Р“РµРЅРµСЂСѓС”РјРѕ IV 16 Р±Р°Р№С‚
   AES := TAesCbc.Create(FSessionKey);
   try
-    // Підготовка AES-128-CBC шифрування
+    // РџС–РґРіРѕС‚РѕРІРєР° AES-128-CBC С€РёС„СЂСѓРІР°РЅРЅСЏ
     RandomBytes(@AES.IV[0], SizeOf(IV));
     move(AES.IV[0], IV[0], SizeOf(IV));
     Encrypted := AES.EncryptPkcs7(Plain);
@@ -586,7 +586,7 @@ begin
     FreeAndNil(AES);
   end;
 
-  // Формуємо внутрішній пакет: qint16(total) + qint16(plain len) + IV + encrypted
+  // Р¤РѕСЂРјСѓС”РјРѕ РІРЅСѓС‚СЂС–С€РЅС–Р№ РїР°РєРµС‚: qint16(total) + qint16(plain len) + IV + encrypted
   SetLength(Packet, 4 + 16 + Length(Encrypted));
   Pword(@Packet[0])^ := NtoBE(word(Length(Encrypted)));
   Pword(@Packet[2])^ := NtoBE(word(Length(Plain)));
@@ -594,10 +594,10 @@ begin
   Move(Encrypted[0], Packet[20], Length(Encrypted));
   //Move(Encrypted[0], Packet[4], Length(Encrypted));
 
-  // Заголовок для сокета
+  // Р—Р°РіРѕР»РѕРІРѕРє РґР»СЏ СЃРѕРєРµС‚Р°
   SetLength(Header, 6);
 
-  // Об’єднуємо заголовок + пакет
+  // РћР±вЂ™С”РґРЅСѓС”РјРѕ Р·Р°РіРѕР»РѕРІРѕРє + РїР°РєРµС‚
   TotalLen := Length(Header) + Length(Packet);
   PWord(@Header[0])^ := NtoBE(word(TotalLen));
   PWord(@Header[2])^ := NtoBE(word(2));
@@ -607,7 +607,7 @@ begin
   Move(Header[0], FullPacket[0], Length(Header));
   Move(Packet[0], FullPacket[Length(Header)], Length(Packet));
 
-  // Відправка
+  // Р’С–РґРїСЂР°РІРєР°
   FSocket.SendBuffer(@FullPacket[0], Length(FullPacket));
 end;
 
