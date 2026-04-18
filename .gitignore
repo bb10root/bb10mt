@@ -1,0 +1,44 @@
+# Free Pascal / Lazarus
+*.ppu
+*.o
+*.or
+*.rst
+*.a
+*.so
+*.dcu
+*.dcp
+*.exe
+*.dll
+*.dSYM/
+*.dbg
+*.bak
+*.log
+
+# Lazarus Project Files
+*.lps
+*.lpi~
+backup/
+lib/
+*.compiled
+link*.res
+
+# Custom project files
+bb10mt
+bb10mt.exe
+bb10mt.dbg
+bb10mt.lps
+reslist.txt
+resources.res
+cla
+cap.exe
+cap1.exe
+cap2.exe
+compressed/
+loaders.dat
+loaders.ini
+bb10mt_aarch64_darwin*
+bb10mt_x64_darwin
+ramloaders/
+bb10mt_src.zip
+templinux.wpo
+tempwindows.wpo
