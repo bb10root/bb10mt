@@ -1,0 +1,747 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <ManyBuildModesSelection Value="ReleaseLin"/>
+    <BuildModes Active="Debug"/>
+    <Units>
+      <Unit>
+        <Filename Value="bb10mt.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <TopLine Value="19"/>
+        <CursorPos X="8" Y="19"/>
+        <UsageCount Value="202"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ubarutils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uBarUtils"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="26"/>
+        <CursorPos X="48" Y="40"/>
+        <UsageCount Value="200"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uflash.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uFlash"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="333"/>
+        <CursorPos X="22" Y="384"/>
+        <UsageCount Value="207"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uqnx.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uQNX"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="198"/>
+        <CursorPos X="55" Y="206"/>
+        <UsageCount Value="207"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ubar.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uBar"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="156"/>
+        <CursorPos X="13" Y="178"/>
+        <UsageCount Value="207"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uqcfm.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uQCFM"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="187"/>
+        <CursorPos X="10" Y="209"/>
+        <UsageCount Value="207"/>
+      </Unit>
+      <Unit>
+        <Filename Value="nvre.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="210"/>
+      </Unit>
+      <Unit>
+        <Filename Value="mct.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="MCT"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="166"/>
+        <CursorPos X="16" Y="178"/>
+        <UsageCount Value="210"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uraw.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uRAW"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="59"/>
+        <CursorPos X="20" Y="94"/>
+        <UsageCount Value="200"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uarchive.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uArchive"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="90"/>
+        <CursorPos Y="90"/>
+        <UsageCount Value="204"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uinfo.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uInfo"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="97"/>
+        <CursorPos X="7"/>
+        <UsageCount Value="201"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ustp.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uSTP"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="20"/>
+        <CursorPos Y="32"/>
+        <UsageCount Value="216"/>
+      </Unit>
+      <Unit>
+        <Filename Value="stp.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="STP"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="147"/>
+        <CursorPos X="72" Y="168"/>
+        <UsageCount Value="216"/>
+      </Unit>
+      <Unit>
+        <Filename Value="urcfs.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uRCFS"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="16"/>
+        <CursorPos Y="25"/>
+        <UsageCount Value="200"/>
+      </Unit>
+      <Unit>
+        <Filename Value="pefile.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="PEFile"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="174"/>
+        <CursorPos X="8" Y="204"/>
+        <UsageCount Value="200"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ldr.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="156"/>
+        <CursorPos X="55" Y="164"/>
+        <UsageCount Value="211"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ramloader.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="RamLoader"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="751"/>
+        <CursorPos X="40" Y="759"/>
+        <UsageCount Value="201"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="bb_usb_detect.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="22"/>
+        <UsageCount Value="212"/>
+      </Unit>
+      <Unit>
+        <Filename Value="mainnet.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="MainNet"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="614"/>
+        <CursorPos X="27" Y="638"/>
+        <UsageCount Value="208"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unet.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uNet"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="37"/>
+        <CursorPos Y="50"/>
+        <UsageCount Value="205"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="logger.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Logger"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="35"/>
+        <CursorPos X="6" Y="51"/>
+        <UsageCount Value="200"/>
+      </Unit>
+      <Unit>
+        <Filename Value="umisc.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uMisc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="66"/>
+        <CursorPos Y="73"/>
+        <UsageCount Value="202"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uautoloader.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uAutoloader"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="296"/>
+        <CursorPos Y="305"/>
+        <UsageCount Value="200"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ucrypto.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uCrypto"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="107"/>
+        <CursorPos X="3" Y="117"/>
+        <UsageCount Value="200"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ecdsa_p521.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="248"/>
+      </Unit>
+      <Unit>
+        <Filename Value="usubstream.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uSubStream"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="62"/>
+        <CursorPos X="25" Y="76"/>
+        <UsageCount Value="212"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uvmdk.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uVMDK"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="646"/>
+        <CursorPos Y="660"/>
+        <UsageCount Value="211"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ulzo2.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uLZO2"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="13"/>
+        <CursorPos X="3" Y="23"/>
+        <UsageCount Value="213"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uscript.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uScript"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="189"/>
+        <CursorPos X="14" Y="31"/>
+        <UsageCount Value="200"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../bbqnx/qnx6.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2852"/>
+        <CursorPos X="7" Y="2871"/>
+        <UsageCount Value="28"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../bbqnx/fuseqnx6.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="500"/>
+        <CursorPos X="34" Y="578"/>
+        <UsageCount Value="29"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/cli-fp/src/cli.command.pas"/>
+        <UnitName Value="CLI.Command"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="382"/>
+        <CursorPos X="3" Y="388"/>
+        <UsageCount Value="73"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../bbqnx/qcfm.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="461"/>
+        <CursorPos Y="483"/>
+        <UsageCount Value="29"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../BB/bbloader.pas"/>
+        <UnitName Value="bbLoader"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="171"/>
+        <CursorPos X="7" Y="189"/>
+        <UsageCount Value="55"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../bbqnx/rcfs.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="139"/>
+        <CursorPos X="49" Y="139"/>
+        <UsageCount Value="22"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../bbqnx/consts.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="79"/>
+        <CursorPos X="31" Y="92"/>
+        <UsageCount Value="28"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../bbqnx/bits.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="440"/>
+        <CursorPos X="5" Y="468"/>
+        <UsageCount Value="55"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../BB/bbusb.pas"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="33"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/cli-fp/src/cli.console.pas"/>
+        <UnitName Value="CLI.Console"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="280"/>
+        <CursorPos X="5" Y="292"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/cli-fp/src/cli.progress.pas"/>
+        <UnitName Value="CLI.Progress"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="213"/>
+        <CursorPos Y="225"/>
+        <UsageCount Value="1"/>
+      </Unit>
+      <Unit>
+        <Filename Value="qnx6.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1203"/>
+        <CursorPos X="60" Y="1212"/>
+        <UsageCount Value="102"/>
+      </Unit>
+      <Unit>
+        <Filename Value="qcfm.pas"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="114"/>
+        <CursorPos X="3" Y="129"/>
+        <UsageCount Value="116"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="bbusb.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="595"/>
+        <CursorPos Y="462"/>
+        <UsageCount Value="100"/>
+      </Unit>
+      <Unit>
+        <Filename Value="bbloader.pas"/>
+        <UnitName Value="bbLoader"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="67"/>
+        <CursorPos X="20" Y="78"/>
+        <UsageCount Value="99"/>
+      </Unit>
+      <Unit>
+        <Filename Value="rcfs.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="92"/>
+        <CursorPos Y="104"/>
+        <UsageCount Value="102"/>
+      </Unit>
+      <Unit>
+        <Filename Value="fuseqnx6.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="710"/>
+        <CursorPos Y="795"/>
+        <UsageCount Value="76"/>
+      </Unit>
+      <Unit>
+        <Filename Value="qnx_consts.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="22"/>
+        <CursorPos X="33" Y="31"/>
+        <UsageCount Value="21"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/mORMot2/src/crypt/mormot.crypt.core.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="43"/>
+        <CursorPos X="17" Y="45"/>
+        <UsageCount Value="1"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/mORMot2/src/core/mormot.core.fpcx64mm.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="3717"/>
+        <CursorPos Y="3746"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/LGenerics/lgenerics/lghashmap.pas"/>
+        <UnitName Value="lgHashMap"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1741"/>
+        <CursorPos Y="1760"/>
+        <UsageCount Value="5"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../laz4/fpcsrc/packages/fcl-web/src/base/fphttpclient.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="382"/>
+        <CursorPos Y="391"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../laz4/ccr/synapse/blcksock.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="3" Y="966"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="bbcgi.pas"/>
+        <UnitName Value="bbCGI"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="133"/>
+        <CursorPos X="45" Y="145"/>
+        <UsageCount Value="74"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/mORMot2/src/core/mormot.core.text.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2388"/>
+        <CursorPos X="13" Y="2411"/>
+        <UsageCount Value="1"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/mORMot2/src/core/mormot.core.base.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="4553"/>
+        <CursorPos Y="4566"/>
+        <UsageCount Value="1"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/mORMot2/src/mormot.uses.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="8"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../laz4/fpcsrc/rtl/objpas/sysutils/fina.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="390"/>
+        <CursorPos X="36" Y="399"/>
+        <UsageCount Value="5"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/ulzmadecoder.pas"/>
+        <UnitName Value="ULZMADecoder"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="141"/>
+        <CursorPos Y="156"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/urangedecoder.pas"/>
+        <UnitName Value="URangeDecoder"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="79"/>
+        <CursorPos X="6" Y="105"/>
+        <UsageCount Value="5"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../laz4/fpcsrc/rtl/linux/ostypes.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="89"/>
+        <CursorPos X="3" Y="97"/>
+        <UsageCount Value="5"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../laz4/fpcsrc/rtl/linux/x86_64/stat.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="15"/>
+        <CursorPos X="3" Y="17"/>
+        <UsageCount Value="5"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../laz4/fpcsrc/rtl/x86_64/strings.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="8"/>
+        <CursorPos X="13" Y="22"/>
+        <UsageCount Value="5"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/ulzmaencoder.pas"/>
+        <UnitName Value="ULZMAEncoder"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="60"/>
+        <CursorPos X="81" Y="80"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/pl_ExCompress/source/ulzmadecoder.pas"/>
+        <UnitName Value="ULZMADecoder"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="402"/>
+        <CursorPos X="7" Y="431"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../libs/pl_ExCompress/source/urangedecoder.pas"/>
+        <UnitName Value="URangeDecoder"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="77"/>
+        <CursorPos X="7" Y="106"/>
+        <UsageCount Value="9"/>
+      </Unit>
+    </Units>
+    <OtherDefines Count="2">
+      <Define0 Value="FPCUSEVERSIONINFO"/>
+      <Define1 Value="USEGENERICS"/>
+    </OtherDefines>
+    <JumpHistory HistoryIndex="22">
+      <Position>
+        <Filename Value="bb10mt.lpr"/>
+        <Caret Line="34" Column="62" TopLine="18"/>
+      </Position>
+      <Position>
+        <Filename Value="bb10mt.lpr"/>
+        <Caret Line="5"/>
+      </Position>
+      <Position>
+        <Filename Value="bb10mt.lpr"/>
+        <Caret Line="19" Column="43" TopLine="19"/>
+      </Position>
+      <Position>
+        <Filename Value="uflash.pas"/>
+        <Caret Line="56" Column="42" TopLine="40"/>
+      </Position>
+      <Position>
+        <Filename Value="uflash.pas"/>
+        <Caret Line="55" TopLine="31"/>
+      </Position>
+      <Position>
+        <Filename Value="uflash.pas"/>
+        <Caret Line="25" Column="3" TopLine="4"/>
+      </Position>
+      <Position>
+        <Filename Value="ramloader.pas"/>
+        <Caret Line="62" Column="31" TopLine="43"/>
+      </Position>
+      <Position>
+        <Filename Value="qcfm.pas"/>
+        <Caret Line="426" Column="64" TopLine="401"/>
+      </Position>
+      <Position>
+        <Filename Value="uflash.pas"/>
+        <Caret Line="55" Column="17" TopLine="40"/>
+      </Position>
+      <Position>
+        <Filename Value="uflash.pas"/>
+        <Caret Line="22" Column="17" TopLine="5"/>
+      </Position>
+      <Position>
+        <Filename Value="uflash.pas"/>
+        <Caret Line="384" Column="22" TopLine="366"/>
+      </Position>
+      <Position>
+        <Filename Value="ramloader.pas"/>
+        <Caret Line="1005" Column="12" TopLine="988"/>
+      </Position>
+      <Position>
+        <Filename Value="qcfm.pas"/>
+        <Caret Line="337" Column="18" TopLine="330"/>
+      </Position>
+      <Position>
+        <Filename Value="qcfm.pas"/>
+        <Caret Line="397" Column="24" TopLine="373"/>
+      </Position>
+      <Position>
+        <Filename Value="qcfm.pas"/>
+        <Caret Line="241" Column="10" TopLine="238"/>
+      </Position>
+      <Position>
+        <Filename Value="qcfm.pas"/>
+        <Caret Line="129" Column="3" TopLine="114"/>
+      </Position>
+      <Position>
+        <Filename Value="ramloader.pas"/>
+        <Caret Line="909" Column="18" TopLine="898"/>
+      </Position>
+      <Position>
+        <Filename Value="ramloader.pas"/>
+        <Caret Line="767" Column="3" TopLine="765"/>
+      </Position>
+      <Position>
+        <Filename Value="ramloader.pas"/>
+        <Caret Line="759" Column="40" TopLine="751"/>
+      </Position>
+      <Position>
+        <Filename Value="unet.pas"/>
+        <Caret Line="99" TopLine="81"/>
+      </Position>
+      <Position>
+        <Filename Value="unet.pas"/>
+        <Caret Line="26" Column="3" TopLine="24"/>
+      </Position>
+      <Position>
+        <Filename Value="unet.pas"/>
+        <Caret Line="48" Column="15" TopLine="32"/>
+      </Position>
+      <Position>
+        <Filename Value="unet.pas"/>
+        <Caret Line="137" Column="17" TopLine="134"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode="default">
+        <Mode Name="default">
+          <local>
+            <CommandLineParams Value="info"/>
+          </local>
+        </Mode>
+      </Modes>
+    </RunParams>
+    <HistoryLists>
+      <List Name="LaunchingApplication" Type="File" Count="2">
+        <Item1 Value="/usr/bin/xterm -T &apos;Lazarus Run Output&apos; -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+        <Item2 Value="/usr/bin/konsole -T &apos;Lazarus Run Output&apos; -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+      </List>
+      <List Name="CommandLineParameters" Count="20">
+        <Item1 Value="info"/>
+        <Item2 Value="qnx6 mount -f -m ~/ssh -i /home/lc/RE/RIM/passport/Passport_10.3.03.3216_SQW100-1-2-3-4.0.4.ufs"/>
+        <Item3 Value="qnx6 mount -s -m ~/ssh -i /home/lc/RE/RIM/passport/Passport_10.3.03.3216_SQW100-1-2-3-4.0.4.ufs"/>
+        <Item4 Value="flash -l ~/RE/RIM/passport/Passport_10.3.03.3216_SQW100-1-2-3-4.1.lst -i ~/RE/RIM/passport/qcfm.image.com.qnx.qcfm.qc8960.factory_sfi_hybrid_qc8974.BB10_3_3.2049.902331.signed"/>
+        <Item5 Value="rcfs modify -i ~/RE/RIM/passport/Passport_10.3.03.3216_SQW100-1-2-3-4.1.0.radio.rcfs -c /etc/sanity/sanity_radio_runtime.cfg"/>
+        <Item6 Value="rcfs extract -i /home/lc/RE/RIM/passport/09_os_fsys.bin -o ~/tmp/testrcfs"/>
+        <Item7 Value="rcfs -i /home/lc/RE/RIM/passport/09_os_fsys.bin extract  -o ~/tmp/testrcfs "/>
+        <Item8 Value="qnx6 mount -f -m ~/ssh -i /home/lc/RE/RIM/passport/05_user.bin"/>
+        <Item9 Value="qnx6 mount -f -m ~/ssh -i /home/lc/Downloads/BB/z10_nand/user0.img"/>
+        <Item10 Value="qnx6 mount -f -m ~/ssh -i /home/lc/RE/RIM/test/BB10_3_3.3216.ufs"/>
+        <Item11 Value="qnx6 mount -m ~/ssh -i /home/lc/RE/RIM/test/BB10_3_3.3216.ufs"/>
+        <Item12 Value="nuke"/>
+        <Item13 Value="qnx6 mkfs -i test.img"/>
+        <Item14 Value="qnx6 mount -i /home/lc/RE/RIM/test/passport/output/OS-MOD.Signed -m ~/ssh "/>
+        <Item15 Value="autoloader create -i /home/lc/RE/RIM/test/passport/output/OS-MOD.Signed /home/lc/RE/RIM/test/q30_os.exe        "/>
+        <Item16 Value="qnx6 mount -f -i /home/lc/RE/RIM/test/Q20_10.3.03.3057_STA100.0.4.ufs -m ~/ssh"/>
+        <Item17 Value="rcfs -i /home/lc/bbndk/simulator_10_3_2_281/BlackBerry10Simulator-s001.vmdk --vmdk --script root_emu.txt"/>
+        <Item18 Value="rcfs -i /home/lc/bbndk/simulator_10_3_2_281/BlackBerry10Simulator-s001.vmdk --vmdk"/>
+        <Item19 Value="rcfs -i /home/lc/bbndk/simulator_10_3_2_281/BlackBerry10Simulator-s001.vmdk -vmdk"/>
+        <Item20 Value="rcfs -i /home/lc/bbndk/simulator_10_3_2_281/BlackBerry10Simulator-s001.vmdk -vmdk -s qqq"/>
+      </List>
+    </HistoryLists>
+  </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="qcfm.pas"/>
+        <Line Value="792"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="uvmdk.pas"/>
+        <Line Value="660"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="uautoloader.pas"/>
+        <Line Value="305"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="bbloader.pas"/>
+        <Line Value="508"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="qnx6.pas"/>
+        <Line Value="1272"/>
+      </Item>
+    </BreakPoints>
+    <Watches>
+      <Item>
+        <Expression Value="Result"/>
+        <DisplayFormat ArrayLineInherit="False" MultiLineInherit="False" MultiLineForceSingleLineThresholdStructFld="32" MultiLineForceSingleLineThresholdArrayLen="32" MultiLineForceSingleLineReverseDepth="32" IsMemDump="True"/>
+      </Item>
+      <Item>
+        <Expression Value="cmd"/>
+        <DisplayFormat NumInherit="False" Num="vdfBaseHex"/>
+      </Item>
+      <Item>
+        <Expression Value="pkt"/>
+        <DisplayFormat IsMemDump="True"/>
+      </Item>
+      <Item>
+        <Expression Value="size"/>
+        <DisplayFormat NumInherit="False" Num="vdfBaseHex"/>
+      </Item>
+      <Item>
+        <Expression Value="result"/>
+        <DisplayFormat NumInherit="False" Num="vdfBaseHex" ArrayNavBarInherit="False"/>
+      </Item>
+      <Item>
+        <Expression Value="DI"/>
+        <DisplayFormat ArrayNavBarInherit="False"/>
+      </Item>
+      <Item>
+        <Expression Value="inode"/>
+      </Item>
+      <Item>
+        <Expression Value="aMode"/>
+        <DisplayFormat NumInherit="False" Num="vdfBaseOct"/>
+      </Item>
+      <Item>
+        <Expression Value="first_offset"/>
+      </Item>
+      <Item>
+        <Expression Value="tmpData"/>
+      </Item>
+      <Item>
+        <Expression Value="fActiveSB"/>
+      </Item>
+      <Item>
+        <Expression Value="FModelID"/>
+        <DisplayFormat NumInherit="False" Num="vdfBaseHex"/>
+      </Item>
+    </Watches>
+  </Debugging>
+</CONFIG>

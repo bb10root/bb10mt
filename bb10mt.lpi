@@ -1,0 +1,544 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="12"/>
+    <General>
+      <Flags>
+        <MainUnitHasCreateFormStatements Value="False"/>
+        <MainUnitHasTitleStatement Value="False"/>
+        <MainUnitHasScaledStatement Value="False"/>
+        <AlwaysBuild Value="True"/>
+      </Flags>
+      <SessionStorage Value="InProjectDir"/>
+      <Title Value="BB10 MultiTool"/>
+      <UseAppBundle Value="False"/>
+      <ResourceType Value="res"/>
+    </General>
+    <VersionInfo>
+      <UseVersionInfo Value="True"/>
+      <AutoIncrementBuild Value="True"/>
+      <MinorVersionNr Value="1"/>
+      <BuildNr Value="98"/>
+      <Attributes pvaDebug="True" pvaPreRelease="True"/>
+      <StringTable CompanyName="Oleksandr" FileDescription="BB10 MultiTool"/>
+    </VersionInfo>
+    <BuildModes>
+      <Item Name="Debug" Default="True"/>
+      <Item Name="ReleaseLin">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="bb10mt"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir);../libs/mORMot2/src"/>
+            <OtherUnitFiles Value="../libs/LGenerics/lgenerics;../libs/pas-libusb/src;/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <TargetOS Value="linux"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <RunWithoutDebug Value="True"/>
+              <StripSymbols Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dFPCUSEVERSIONINFO"/>
+            <OtherDefines Count="2">
+              <Define0 Value="FPCUSEVERSIONINFO"/>
+              <Define1 Value="USEGENERICS"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item>
+      <Item Name="ReleaseWin">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="bb10mt"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir);../libs/mORMot2/src"/>
+            <OtherUnitFiles Value="../libs/LGenerics/lgenerics;../libs/pas-libusb/src;/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <TargetOS Value="win64"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <RunWithoutDebug Value="True"/>
+              <StripSymbols Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dFPCUSEVERSIONINFO"/>
+            <OtherDefines Count="1">
+              <Define0 Value="FPCUSEVERSIONINFO"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item>
+      <Item Name="ReleaseMacARM64">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="bb10mt_aarch64_darwin"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir);../libs/mORMot2/src"/>
+            <OtherUnitFiles Value="../libs/LGenerics/lgenerics;../libs/pas-libusb/src;/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <TargetCPU Value="aarch64"/>
+            <TargetOS Value="darwin"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <RunWithoutDebug Value="True"/>
+              <StripSymbols Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dFPCUSEVERSIONINFO"/>
+            <OtherDefines Count="1">
+              <Define0 Value="FPCUSEVERSIONINFO"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item>
+      <Item Name="ReleaseLinWPO1">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="bb10mt"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir);../libs/mORMot2/src"/>
+            <OtherUnitFiles Value="../libs/LGenerics/lgenerics;../libs/pas-libusb/src;/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <TargetProcessor Value="COREAVX2"/>
+            <TargetOS Value="linux"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <RunWithoutDebug Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dFPCUSEVERSIONINFO
+-OWall 
+-FWtemplinux.wpo
+-CX
+-Xs-"/>
+            <OtherDefines Count="2">
+              <Define0 Value="FPCUSEVERSIONINFO"/>
+              <Define1 Value="USEGENERICS"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item>
+      <Item Name="ReleaseLinWPO2">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="bb10mt"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir);../libs/mORMot2/src"/>
+            <OtherUnitFiles Value="../libs/LGenerics/lgenerics;../libs/pas-libusb/src;/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <TargetProcessor Value="COREAVX2"/>
+            <TargetOS Value="linux"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <RunWithoutDebug Value="True"/>
+              <StripSymbols Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dFPCUSEVERSIONINFO
+-Owall 
+-Fwtemplinux.wpo
+-CX"/>
+            <OtherDefines Count="2">
+              <Define0 Value="FPCUSEVERSIONINFO"/>
+              <Define1 Value="USEGENERICS"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item>
+      <Item Name="ReleaseWinWPO1">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="bb10mt"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir);../libs/mORMot2/src"/>
+            <OtherUnitFiles Value="../libs/LGenerics/lgenerics;../libs/pas-libusb/src;/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <TargetProcessor Value="COREAVX2"/>
+            <TargetOS Value="win64"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <RunWithoutDebug Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dFPCUSEVERSIONINFO
+-OWDEVIRTCALLS,OPTVMTS -FWtempwindows.wpo -CX -XX -Xs-"/>
+            <OtherDefines Count="1">
+              <Define0 Value="FPCUSEVERSIONINFO"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item>
+      <Item Name="ReleaseWinWPO2">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="bb10mt"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir);../libs/mORMot2/src"/>
+            <OtherUnitFiles Value="../libs/LGenerics/lgenerics;../libs/pas-libusb/src;/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <TargetProcessor Value="COREAVX2"/>
+            <TargetOS Value="win64"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <RunWithoutDebug Value="True"/>
+              <StripSymbols Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dFPCUSEVERSIONINFO
+-OwDEVIRTCALLS,OPTVMTS -Fwtempwindows.wpo -CX -XX"/>
+            <OtherDefines Count="1">
+              <Define0 Value="FPCUSEVERSIONINFO"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item>
+      <Item Name="ReleaseMacx64">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="bb10mt_x64_darwin"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir);../libs/mORMot2/src"/>
+            <OtherUnitFiles Value="../libs/LGenerics/lgenerics;../libs/pas-libusb/src;/usr/local/codetyphon/typhon/components/packages_pl/pl_ExCompress/source/"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <TargetProcessor Value="COREAVX2"/>
+            <TargetCPU Value="x86_64"/>
+            <TargetOS Value="darwin"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <RunWithoutDebug Value="True"/>
+              <StripSymbols Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dFPCUSEVERSIONINFO"/>
+            <OtherDefines Count="1">
+              <Define0 Value="FPCUSEVERSIONINFO"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+    <RunParams>
+      <FormatVersion Value="2"/>
+    </RunParams>
+    <RequiredPackages>
+      <Item>
+        <PackageName Value="mormot2"/>
+      </Item>
+      <Item>
+        <PackageName Value="laz_synapse"/>
+      </Item>
+      <Item>
+        <PackageName Value="LCLBase"/>
+      </Item>
+      <Item>
+        <PackageName Value="cli_fp"/>
+      </Item>
+      <Item>
+        <PackageName Value="LazUtils"/>
+      </Item>
+    </RequiredPackages>
+    <Units>
+      <Unit>
+        <Filename Value="bb10mt.lpr"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ubarutils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uBarUtils"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uflash.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uFlash"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uqnx.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uQNX"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ubar.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uBar"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uqcfm.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uQCFM"/>
+      </Unit>
+      <Unit>
+        <Filename Value="nvre.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="mct.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="MCT"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uraw.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uRAW"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uarchive.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uArchive"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uinfo.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uInfo"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ustp.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uSTP"/>
+      </Unit>
+      <Unit>
+        <Filename Value="stp.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="STP"/>
+      </Unit>
+      <Unit>
+        <Filename Value="urcfs.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uRCFS"/>
+      </Unit>
+      <Unit>
+        <Filename Value="pefile.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="PEFile"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ldr.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ramloader.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="RamLoader"/>
+      </Unit>
+      <Unit>
+        <Filename Value="bb_usb_detect.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="mainnet.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="MainNet"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unet.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uNet"/>
+      </Unit>
+      <Unit>
+        <Filename Value="logger.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Logger"/>
+      </Unit>
+      <Unit>
+        <Filename Value="umisc.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uMisc"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uautoloader.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uAutoloader"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ucrypto.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uCrypto"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ecdsa_p521.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="usubstream.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uSubStream"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uvmdk.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uVMDK"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ulzo2.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uLZO2"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uscript.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uScript"/>
+      </Unit>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <Target>
+      <Filename Value="bb10mt"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir);../libs/mORMot2/src"/>
+      <OtherUnitFiles Value="../libs/LGenerics/lgenerics;../libs/pas-libusb/src;../libs/pl_ExCompress/source"/>
+      <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Parsing>
+      <SyntaxOptions>
+        <IncludeAssertionCode Value="True"/>
+      </SyntaxOptions>
+    </Parsing>
+    <CodeGeneration>
+      <Checks>
+        <IOChecks Value="True"/>
+        <RangeChecks Value="True"/>
+        <OverflowChecks Value="True"/>
+        <StackChecks Value="True"/>
+      </Checks>
+      <StackSize Value="1024000"/>
+      <VerifyObjMethodCallValidity Value="True"/>
+    </CodeGeneration>
+    <Linking>
+      <Debugging>
+        <DebugInfoType Value="dsDwarf3"/>
+        <UseHeaptrc Value="True"/>
+        <TrashVariables Value="True"/>
+        <UseExternalDbgSyms Value="True"/>
+      </Debugging>
+    </Linking>
+    <Other>
+      <CustomOptions Value="-dFPCUSEVERSIONINFO"/>
+      <OtherDefines Count="2">
+        <Define0 Value="FPCUSEVERSIONINFO"/>
+        <Define1 Value="USEGENERICS"/>
+      </OtherDefines>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions>
+      <Item>
+        <Name Value="EAbort"/>
+      </Item>
+      <Item>
+        <Name Value="ECodetoolError"/>
+      </Item>
+      <Item>
+        <Name Value="EFOpenError"/>
+      </Item>
+      <Item>
+        <Name Value="EUSBError"/>
+      </Item>
+      <Item>
+        <Name Value="ELibUsb"/>
+      </Item>
+    </Exceptions>
+  </Debugging>
+</CONFIG>
