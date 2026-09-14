@@ -562,6 +562,15 @@
         <Filename Value="qnx6.triecache.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="ubatch.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uBatch"/>
+      </Unit>
+      <Unit>
+        <Filename Value="scripthandler.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

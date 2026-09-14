@@ -126,6 +126,7 @@ var
   outFile: TFileStream;
   xxx: TStringArray;
   crc: cardinal;
+  dummy_signature : array of byte;
 begin
   Result := 0;
   ver := 0;
@@ -186,10 +187,12 @@ begin
     begin
       outFile := TFileStream.Create(ExpandFileName(mfcqFile), fmOpenReadWrite or fmShareDenyWrite);
       try
-        outFile.Position := outFile.Size;
-        outFile.WriteBuffer(dummy_signature[0], sizeof(dummy_signature));
+        //GenDummySig(dummy_signature);
+        outFile.Seek(0, soEnd);
+        //outFile.Write(dummy_signature[0], Length(dummy_signature));
+        outFile.Write(signature_data[0], Length(signature_data));
         crc := CRC32FromStream(outFile, 0, outFile.Size - 4);
-        outFile.Position := outFile.Size - 4;
+        outFile.Seek(-4, soEnd);
         outFile.WriteDWord(crc);
       finally
         FreeAndNil(outFile);

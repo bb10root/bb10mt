@@ -183,8 +183,8 @@ type
   end;
   PDRAM_Info = ^TDRAM_Info;
 
-var
-  dummy_signature: TBytes;
+//var
+//  dummy_signature: TBytes;
 
 type
   TFourInts = array[0..3] of byte;
@@ -207,6 +207,7 @@ function EMMCVendorByID(id: byte): string;
 function DRAMVendorByID(id: byte): string;
 function HWVtoString(val: THVW): string;
 function DecodeBlocked(buf: TBytes): TStringList;
+procedure GenDummySig(var Buf: TBytes);
 
 implementation
 
@@ -391,7 +392,7 @@ begin
   if Length(Buf) <> 560 then
     SetLength(Buf, 560);
 
-  FillChar(Buf[0], 560, $FF);
+  FillChar(Buf[0], 560, $00);
 
   PLongWord(@Buf[$24])^ := $00000088;
   PLongWord(@Buf[$B0])^ := $000000BC;
@@ -554,6 +555,6 @@ begin
 end;
 
 initialization
-  GenDummySig(dummy_signature);
+//  GenDummySig(dummy_signature);
 
 end.

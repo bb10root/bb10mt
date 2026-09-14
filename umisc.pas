@@ -71,9 +71,17 @@ function BytesToHexString(const B: TBytes): string;
 function HexStringToBytes(const S: string): TBytes;
 function AsciiStringToBytes(const S: string): TBytes;
 
+function CreateTempDir(Len: integer = 5): string;
+function GetPathFreeSpace(const APath: string): int64;
+
 implementation
 
-uses crc, Math;
+uses crc, Math,
+  {$IFDEF WINDOWS}
+  Windows
+  {$ELSE}
+  BaseUnix, Unix
+  {$ENDIF};
 
 function StrToHex(const S: string): string;
 var
@@ -766,6 +774,49 @@ begin
     Inc(i);
     Dec(j);
   end;
+end;
+
+
+function CreateTempDir(Len: integer = 5): string;
+const
+  Chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+var
+  I: integer;
+  DirName: string;
+begin
+  Randomize;
+  repeat
+    SetLength(DirName, Len);
+    for I := 1 to Len do
+      DirName[I] := Chars[Random(Length(Chars)) + 1];
+
+    Result := IncludeTrailingPathDelimiter(GetCurrentDir) + 'tmp_' + DirName;
+  until not DirectoryExists(Result);
+
+  if not ForceDirectories(Result) then
+    RaiseLastOSError;
+end;
+
+
+function GetPathFreeSpace(const APath: string): int64;
+  {$IFDEF WINDOWS}
+var
+  FreeBytesAvailableToCaller, TotalNumberOfBytes, TotalNumberOfFreeBytes: ULARGE_INTEGER;
+  {$ELSE}
+var
+  Stat: TStatFS;
+  {$ENDIF}
+begin
+  Result := -1;
+  {$IFDEF WINDOWS}
+  if GetDiskFreeSpaceEx(PChar(APath), FreeBytesAvailableToCaller, TotalNumberOfBytes, @TotalNumberOfFreeBytes) then
+    Result := int64(FreeBytesAvailableToCaller.QuadPart);
+  {$ELSE}
+  if fpstatfs(PChar(APath), @Stat) = 0 then
+    Result := int64(Stat.bavail) * int64(Stat.bsize)
+  else if fpstatfs(PChar(ExtractFilePath(ExcludeTrailingPathDelimiter(APath))), @Stat) = 0 then
+    Result := int64(Stat.bavail) * int64(Stat.bsize);
+  {$ENDIF}
 end;
 
 initialization

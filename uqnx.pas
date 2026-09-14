@@ -60,8 +60,8 @@ uses
   fuseqnx6,
   {$ENDIF}
   FileUtil,
-  uScript, qnx6.types, qnx6,
-  QNX.Debloat, QNX.Commands.Script;
+  qnx6.types, qnx6,
+  QNX.Debloat, scripthandler;
 
 {$IFDEF LINUX}
 function TMountCommand.Execute: Integer;
@@ -100,17 +100,12 @@ end;
 function TQNX6ScriptCommand.Execute: integer;
 var
   line, scriptName, imagePath, bList, scriptPath, debloatStr: string;
-  fStream: TFileStream;
   script, blackList: TStringList;
-  CmdList: ICommandList;
   debloat: boolean = False;
-  QNX: TQNX6Fs;
 begin
   Result := 0;
   blackList := nil;
   script := nil;
-  fStream := nil;
-  QNX := nil;
 
   if not GetParameterValue('--image', imagePath) then
   begin
@@ -152,57 +147,7 @@ begin
   end;
 
   try
-    fStream := TFileStream.Create(imagePath, fmOpenReadWrite);
-    try
-      QNX := TQNX6Fs.Create(fStream);
-      try
-        QNX.Open(True);
-
-        if debloat and Assigned(blackList) then
-          UninstallApps(QNX, blackList, @ApplyChmod);
-
-        if scriptName <> '' then
-        begin
-          script := TStringList.Create;
-          try
-            script.LoadFromFile(scriptName);
-            CmdList := TCommandList.Create;
-            CmdList.RegisterCommand(
-              TMkDirCommand.Create('mkdir', 'create directory', 'mkdir [-p] <path>', QNX));
-            CmdList.RegisterCommand(
-              TPushCommand.Create('push', 'push file/dir to image', 'push <src path> <dst path>', QNX));
-            CmdList.RegisterCommand(
-              TTouchCommand.Create('touch', 'create empty file', 'touch <file>', QNX));
-            CmdList.RegisterCommand(
-              TChmodCommand.Create('chmod', 'change file/dir mode', 'chmod [-R] <mode> <path>', QNX));
-            CmdList.RegisterCommand(
-              TChownCommand.Create('chown', 'change file/dir owner',
-              'chown [-R] <user>:<group> <path>', QNX));
-            CmdList.RegisterCommand(
-              TReplaceCommand.Create('replace', 'replace substring in file',
-              'replace <file> <old> <new>', QNX));
-            CmdList.RegisterCommand(
-              TRemoveAppCommand.Create('removeapp', 'remove preinstalled app',
-              'removeapp <appID_1>..<appID_N>', QNX));
-            CmdList.RegisterCommand(
-              TRmCommand.Create('rm', 'remove file/dir mode', 'chmod [-R] <path>', QNX));
-            CmdList.RegisterCommand(
-              TAddStringCommand.Create('addstring', 'add string to file', 'addstring <file> <string>', QNX));
-
-            for line in script do
-              CmdList.ExecuteCommand(line);
-          finally
-            FreeAndNil(script);
-          end;
-        end;
-
-        QNX.Close;
-      finally
-        FreeAndNil(QNX);
-      end;
-    finally
-      FreeAndNil(fStream);
-    end;
+    runScript(imagePath, scriptName);
   finally
     if Assigned(blackList) then
       FreeAndNil(blackList);

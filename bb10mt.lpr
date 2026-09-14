@@ -16,7 +16,7 @@ uses
   uRCFS,
   uQCFM,
   uRAW,
-  uNet;
+  uNet, uBatch;
 
   {$R *.res}
 
@@ -26,7 +26,7 @@ var
 
 
 begin
-  App := CreateCLIApplication('BB10 MultiTool', '0.6.0.0(beta 1)');
+  App := CreateCLIApplication('BB10 MultiTool', '0.6.0.0(beta 3)');
   // Register command
   App.RegisterCommand(QNX6cmd);
   App.RegisterCommand(UnPack);
@@ -41,6 +41,8 @@ begin
   App.RegisterCommand(RCFSCommand);
   App.RegisterCommand(NETCommand);
   App.RegisterCommand(Nuke);
+  App.RegisterCommand(BatchCmd);
+
 
   // Execute application
   ExitCode := App.Execute;
