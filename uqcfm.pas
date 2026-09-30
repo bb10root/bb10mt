@@ -305,7 +305,7 @@ initialization
   Pack.AddPathParameter('-c', '--container', 'container file', True);
   Pack.AddArrayParameter('-i', '--input', 'input files');
   Pack.AddPathParameter('-l', '--list', 'input files list');
-  Pack.AddArrayParameter('-v', '--versions', 'QCFM versions', False, '2');
+  Pack.AddArrayParameter('', '--versions', 'QCFM versions', False, '2');
   Pack.AddFlag('-s', '--sign', 'add fake signature');
   Pack.AddFlag('-f', '--fast', 'include empty blocks');
 
@@ -322,7 +322,7 @@ initialization
   ALCreate.AddPathParameter('-c', '--cap', 'cap.exe file', False, 'cap.exe');
   ALCreate.AddArrayParameter('-i', '--input', 'input files');
   ALCreate.AddPathParameter('-l', '--list', 'input files list');
-  ALCreate.AddIntegerParameter('-v', '--ver', 'cap tail version', False, '2');
+  ALCreate.AddIntegerParameter('', '--ver', 'cap tail version', False, '2');
 
   ALExtract := TALExtractCommand.Create('extract', 'Extract cap.exe from autoloader');
   ALExtract.AddPathParameter('-i', '--input', 'Autoloader file', True);

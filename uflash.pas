@@ -745,7 +745,7 @@ initialization
   Flash := TFlashCommand.Create('flash', 'flash file(s)');
   Flash.AddArrayParameter('-i', '--input', 'input files');
   Flash.AddPathParameter('-l', '--list', 'input files list');
-  Flash.AddArrayParameter('-v', '--versions', 'QCFM version(s)', False, '1,2');
+  Flash.AddArrayParameter('', '--versions', 'QCFM version(s)', False, '1,2');
   Flash.AddPathParameter('-r', '--loaders', 'ram-loaders directory', False, 'loaders');
   Flash.AddIntegerParameter('-d', '--delay', 'RAM-loader delay', False, '1000');
 
