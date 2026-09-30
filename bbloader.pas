@@ -245,8 +245,20 @@ begin
 end;
 
 function TBBLoader.Complete: boolean;
+var
+  RespCmd: word;
 begin
-  Result := SafeChannel2Bool($40C0, [], $4006, 'Complete');
+  Result := False;
+  try
+    fUSB.Channel2($40C0, RespCmd, []);
+    Result := (RespCmd = $4006) or (RespCmd = $402E);
+    if not Result then
+      TConsole.WriteLn(Format('Complete returned unexpected response 0x%.4X',
+        [RespCmd]), ccRed);
+  except
+    on E: Exception do
+      TConsole.WriteLn('Error in Complete: ' + E.Message, ccRed);
+  end;
 end;
 
 function TBBLoader.GRS_Wipe: boolean;
