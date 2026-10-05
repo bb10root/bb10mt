@@ -22,10 +22,15 @@ type
   end;
 
   TDirEntryInfoArray = array of TDirEntryInfo;
+  TGetProgressEvent = procedure(const ASrc, ADst: string) of object;
 
 function Path2QNX(const s: string): string; inline;
 function ExtractPOSIXFilePath(const APath: string): string;
 function EnsurePOSIXTrailingSlash(const APath: string): string;
+
+function NormalizeQNXPath(const APath: string): string;
+function ExtractRelativePOSIXPath(const ABasePath, AFullPath: string): string;
+
 
 function qnx6_MkDir(FS: TQNX6Fs; const aName: string; const Recursive: boolean): boolean;
 function qnx6_RmDir(FS: TQNX6Fs; const aName: string; const Recursive: boolean): boolean;
@@ -36,9 +41,14 @@ function qnx6_writeFile(FS: TQNX6Fs; const aName: string; Data: TMemoryStream): 
 
 function qnx6_readDir(FS: TQNX6Fs; const aPath: string; out EntriesList: TDirEntryInfoArray): integer;
 
+function qnx6_PushFile(FS: TQNX6Fs; const ASrcFilePath, ADstQNXPath: string): integer;
+function qnx6_PushDir(FS: TQNX6Fs; const ASrcDirPath, ADstQNXPath: string;
+  const AOnProgress: TGetProgressEvent = nil): integer;
+
 implementation
 
-{$POINTERMATH ON}
+uses FileUtil;
+  {$POINTERMATH ON}
 
 function Path2QNX(const s: string): string; inline;
 begin
@@ -285,6 +295,111 @@ begin
   end
   else
     Result := -ESysENOTDIR;
+end;
+
+function NormalizeQNXPath(const APath: string): string;
+begin
+  Result := APath.Replace('\', '/');
+  while Result.Contains('//') do
+    Result := Result.Replace('//', '/');
+end;
+
+function ExtractRelativePOSIXPath(const ABasePath, AFullPath: string): string;
+var
+  Rel: string;
+begin
+  Rel := ExtractRelativePath(IncludeTrailingPathDelimiter(ABasePath), AFullPath);
+  Result := Rel.Replace('\', '/');
+end;
+
+function qnx6_PushFile(FS: TQNX6Fs; const ASrcFilePath, ADstQNXPath: string): integer;
+var
+  Stream: TMemoryStream;
+  TargetQNXPath: string;
+begin
+  Result := -1;
+  if FS = nil then Exit;
+
+  TargetQNXPath := NormalizeQNXPath(ADstQNXPath);
+
+  // Створюємо батьківський каталог, якщо він відсутній
+  if not qnx6_MkDir(FS, ExtractPOSIXFilePath(TargetQNXPath), True) then
+    Exit;
+
+  Stream := TMemoryStream.Create;
+  try
+    try
+      Stream.LoadFromFile(ASrcFilePath);
+      if FS.CreateFile(PChar(TargetQNXPath), &666) < 0 then
+        Exit;
+
+      Result := qnx6_writeFile(FS, TargetQNXPath, Stream);
+    except
+      Result := -1;
+    end;
+  finally
+    Stream.Free;
+  end;
+end;
+
+function qnx6_PushDir(FS: TQNX6Fs; const ASrcDirPath, ADstQNXPath: string;
+  const AOnProgress: TGetProgressEvent = nil): integer;
+var
+  BaseSrcDir, InPath, OutPath, RelPath, TargetDstPath: string;
+  DirList: TStringList;
+  CopiedCount: integer;
+begin
+  Result := -1;
+  if FS = nil then Exit;
+
+  BaseSrcDir := IncludeTrailingPathDelimiter(ASrcDirPath);
+  TargetDstPath := NormalizeQNXPath(ADstQNXPath);
+
+  // Створюємо базований каталог в QNX
+  if not qnx6_MkDir(FS, TargetDstPath, True) then
+    Exit;
+
+  // 1. Відтворення підкаталогів
+  DirList := FindAllDirectories(ASrcDirPath, True);
+  try
+    if Assigned(DirList) then
+    begin
+      for InPath in DirList do
+      begin
+        RelPath := ExtractRelativePOSIXPath(BaseSrcDir, InPath);
+        if (RelPath = '') or (RelPath = '.') then Continue;
+
+        OutPath := NormalizeQNXPath(TargetDstPath + '/' + RelPath);
+        qnx6_MkDir(FS, OutPath, True);
+      end;
+    end;
+  finally
+    FreeAndNil(DirList);
+  end;
+
+  // 2. Копіювання всіх файлів
+  CopiedCount := 0;
+  DirList := FindAllFiles(ASrcDirPath, '*', True);
+  try
+    if Assigned(DirList) then
+    begin
+      for InPath in DirList do
+      begin
+        RelPath := ExtractRelativePOSIXPath(BaseSrcDir, InPath);
+        OutPath := NormalizeQNXPath(TargetDstPath + '/' + RelPath);
+
+        if qnx6_PushFile(FS, InPath, OutPath) = 0 then
+        begin
+          Inc(CopiedCount);
+          if Assigned(AOnProgress) then
+            AOnProgress(InPath, OutPath);
+        end;
+      end;
+    end;
+    Result := CopiedCount;
+  finally
+    FreeAndNil(DirList);
+  end;
 end;
 
 end.

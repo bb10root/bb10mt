@@ -75,6 +75,9 @@ var
   checkPath: string;
 
   cap: TPEAutoloaderHeaderInfo;
+  autoloader : TAutoloaderReader;
+
+
 begin
   Result := 0;
   os_bundle := '';
@@ -103,7 +106,7 @@ begin
   // --- Кросплатформена перевірка вільного місця ---
   inputSize := FileSize(input);
 
-  // Для перевірки беремо виснуючу директорію (якщо outDir ще не створено)
+  // Для перевірки беремо існуючу директорію (якщо outDir ще не створено)
   checkPath := outDir;
   while (checkPath <> '') and not DirectoryExists(checkPath) do
     checkPath := ExtractFilePath(ExcludeTrailingPathDelimiter(checkPath));
@@ -304,6 +307,7 @@ begin
   finally
     FreeAndNil(files);
   end;
+
 end;
 
 initialization

@@ -341,7 +341,7 @@ begin
       begin
         DisplayName := ExtractFileName(FL[I]);
         if DisplayName.EndsWith('!') then
-          DisplayName := DisplayName.TrimEnd(['!']);
+          DisplayName := DisplayName.TrimRight(['!']);
 
         TConsole.WriteLn('Flashing: ' + DisplayName);
         K := RAM.FlashFile(FL[I], Ver);

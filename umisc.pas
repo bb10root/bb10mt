@@ -78,7 +78,7 @@ implementation
 
 uses crc, Math,
   {$IFDEF WINDOWS}
-  Windows
+  Windows, FileUtil
   {$ELSE}
   BaseUnix, Unix
   {$ENDIF};
@@ -801,7 +801,7 @@ end;
 function GetPathFreeSpace(const APath: string): int64;
   {$IFDEF WINDOWS}
 var
-  FreeBytesAvailableToCaller, TotalNumberOfBytes, TotalNumberOfFreeBytes: ULARGE_INTEGER;
+  FreeBytesAvailableToCaller, TotalNumberOfBytes, TotalNumberOfFreeBytes: PLargeInteger;
   {$ELSE}
 var
   Stat: TStatFS;
@@ -809,8 +809,7 @@ var
 begin
   Result := -1;
   {$IFDEF WINDOWS}
-  if GetDiskFreeSpaceEx(PChar(APath), FreeBytesAvailableToCaller, TotalNumberOfBytes, @TotalNumberOfFreeBytes) then
-    Result := int64(FreeBytesAvailableToCaller.QuadPart);
+  Result := DiskFree(GetDriveIDFromLetter(ExtractFileDrive(APath)));
   {$ELSE}
   if fpstatfs(PChar(APath), @Stat) = 0 then
     Result := int64(Stat.bavail) * int64(Stat.bsize)

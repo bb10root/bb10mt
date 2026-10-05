@@ -940,37 +940,43 @@ begin
 
   fPayload := nil;
   try
-    fPayload := TFileStream.Create(fName, fmOpenRead);
-
+    // Спочатку перевіряємо, чи файл вже є готовим MFCQ контейнером
+    fPayload := TFileStream.Create(fName, fmOpenRead or fmShareDenyNone);
     isMFCQ := False;
+
     if fPayload.Size >= 4 then
     begin
       if fPayload.Read(MagicVal, SizeOf(MagicVal)) = 4 then
-        isMFCQ := (MagicVal = $7163666D);
+        isMFCQ := (MagicVal = $7163666D); // Magic 'mfcq'
     end;
-    fPayload.Position := 0;
 
+    // Якщо це не MFCQ, закриваємо FileStream і огортаємо файл у TMFCQPackStream "на льоту"
     if not isMFCQ then
     begin
       FreeAndNil(fPayload);
-      fPayload := TMemoryStream.Create;
+      TConsole.WriteLn('Making QCFM stream');
+
       iFiles := TStringList.Create;
       try
         iFiles.Add(fName);
-        TConsole.WriteLn('Making QCFM');
-        _packMFCQ(fPayload, iFiles, nil, ver, ver = 2);
+        // TMFCQPackStream формує заголовки у пам'яті, а дані читає з диска при Read
+        fPayload := TMFCQPackStream.Create(iFiles, nil, ver, ver = 2, true);
       finally
         iFiles.Free;
       end;
-    end;
+    end
+    else
+      fPayload.Position := 0;
 
     s := fPayload.Size;
+
+    // Перевірка наявності сигнатури в кінці контейнера
     if isMFCQ and (s > 560) then
     begin
       fPayload.Position := s - 560;
       if fPayload.Read(MagicVal, SizeOf(MagicVal)) = 4 then
       begin
-        if MagicVal = $48584e51 then
+        if MagicVal = $48584e51 then // Magic 'QNXH'
         begin
           fPayload.Position := s - 560;
           if fPayload.Read(dummy_signature[0], 560) <> 560 then
@@ -993,8 +999,9 @@ begin
     else
       fBBLdr.PreFlash($15);
 
+    // Буфер виділяємо один раз під MAX_FLASH_BLOCK
     SetLength(Buff, MAX_FLASH_BLOCK);
-    TotalBlocks := s div MAX_FLASH_BLOCK + Ord(s mod MAX_FLASH_BLOCK > 0);
+    TotalBlocks := (s + (MAX_FLASH_BLOCK - 8) - 1) div (MAX_FLASH_BLOCK - 8);
     cb := 0;
 
     progress := CreateProgressBar(TotalBlocks, 40);
@@ -1004,23 +1011,25 @@ begin
       while fPayload.Position < s do
       begin
         bs := Min(s - fPayload.Position, MAX_FLASH_BLOCK - 8);
-        SetLength(Buff, bs + 8);
 
-        // Записуємо лічильник номеру блоку в перші 4 байти
+        // Записуємо лічильник та розмір блоку в перші 8 байт буфера
         PDWord(@Buff[0])^ := cb;
         PDWord(@Buff[4])^ := bs;
 
+        // Читаємо payload одразу в буфер починаючи з 8-го байта
         if fPayload.Read(Buff[8], bs) <> integer(bs) then
         begin
           TConsole.WriteLn('Error reading file data', ccRed);
           Break;
         end;
 
+        // Якщо передаємо неповний останній блок, підганяємо розмір масиву для SendBlock
+        if (bs + 8) <> MAX_FLASH_BLOCK then
+          SetLength(Buff, bs + 8);
+
         if not fBBLdr.SendBlock(Buff) then
         begin
           TConsole.WriteLn('Flash error', ccRed);
-          if Assigned(progress) then progress.Stop;
-          FreeAndNil(fPayload);
           Exit(-3);
         end;
 
@@ -1038,14 +1047,15 @@ begin
 
     if not fBBLdr.SendSignature(Buff) then
       TConsole.WriteLn('Signature send error', ccRed);
+
     Sleep(1000);
   finally
-    if Assigned(fPayload) then
-      fPayload.Free;
+    FreeAndNil(fPayload);
   end;
 
   if Assigned(fBBLdr) then
     fBBLdr.Complete;
+
   TConsole.WriteLn('Done');
   Result := 0;
 end;

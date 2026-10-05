@@ -5,7 +5,7 @@ unit qcfm;
 interface
 
 uses
-  Classes, SysUtils, uMisc;
+  Classes, SysUtils, Math, uMisc, Generics.Collections;
 
 type
   TMultiHeaderFileV1 = packed record
@@ -91,6 +91,102 @@ type
     V2: TMFCQChunkArray;
   end;
 
+  TMFCQVersion = (mfcqUnknown, mfcqV1, mfcqV2, mfcqHybrid);
+
+  TBlockMapItem = record
+    VirtOffset: int64;
+    PhysOffset: int64;
+  end;
+
+  { TMFCQChunkStream }
+  TMFCQChunkStream = class(TStream)
+  private
+    FSourceStream: TStream;
+    FChunk: TMFCQChunk;
+    FPosition: int64;
+    FVirtualSize: int64;
+    FBaseOffset: int64;
+    FOwnsSource: boolean;
+    FVersion: TMFCQVersion;
+    FBlockMap: array of TBlockMapItem;
+    procedure BuildBlockMap;
+  public
+    constructor Create(ASourceStream: TStream; const AChunk: TMFCQChunk; AVersion: TMFCQVersion;
+      AOwnsSource: boolean = False);
+    destructor Destroy; override;
+
+    function Read(var Buffer; Count: longint): longint; override;
+    function Write(const Buffer; Count: longint): longint; override;
+    function Seek(const Offset: int64; Origin: TSeekOrigin): int64; override;
+
+    property ChunkInfo: TMFCQChunk read FChunk;
+    property ContainerVersion: TMFCQVersion read FVersion;
+  end;
+
+  { TMFCQContainerStream }
+  TMFCQContainerStream = class
+  private
+    FSourceStream: TStream;
+    FChunks: TMFCQChunkArrays;
+    FOwnsSource: boolean;
+    FVersion: TMFCQVersion;
+    function DetectVersion: TMFCQVersion;
+    function GetChunkCountV1: integer;
+    function GetChunkCountV2: integer;
+    function GetTotalChunkCount: integer;
+  public
+    constructor Create(const AFileName: string); overload;
+    constructor Create(ASourceStream: TStream; AOwnsSource: boolean = False); overload;
+    destructor Destroy; override;
+
+    function GetChunkStreamV1(Index: integer): TMFCQChunkStream;
+    function GetChunkStreamV2(Index: integer): TMFCQChunkStream;
+    function GetChunkStream(Index: integer): TMFCQChunkStream;
+
+    property Chunks: TMFCQChunkArrays read FChunks;
+    property Version: TMFCQVersion read FVersion;
+    property ChunkCountV1: integer read GetChunkCountV1;
+    property ChunkCountV2: integer read GetChunkCountV2;
+    property TotalChunkCount: integer read GetTotalChunkCount;
+  end;
+
+  { TMFCQPackStream }
+  TVirtualBlockMap = record
+    VirtualOffset: int64;
+    SourceFileIdx: integer;
+    FileOffset: int64;
+    BlockSize: integer;
+  end;
+
+  TFileStreamMap = specialize TObjectDictionary<integer, TFileStream>;
+
+  TMFCQPackStream = class(TStream)
+  private
+    FHeaderStream: TMemoryStream;
+    FFiles: array of string;
+    FBlockMap: array of TVirtualBlockMap;
+    FCurrentFileStreams: TFileStreamMap;
+    FPosition: int64;
+    FTotalSize: int64;
+    FPayloadSize: int64;
+    FBlockSize: integer;
+    FCb: TProgressCallback;
+    FSign: boolean;
+    FSignatureBuffer: array[0..559] of byte;
+    procedure BuildHeadersAndMap(const iFiles: TStringList; ver: integer; fast: boolean);
+    function GetSourceStream(FileIdx: integer): TFileStream;
+  protected
+    function GetSize: int64; override;
+  public
+    constructor Create(const iFiles: TStringList; cb: TProgressCallback = nil;
+      ver: integer = 2; fast: boolean = False; sign: boolean = False);
+    destructor Destroy; override;
+
+    function Read(var Buffer; Count: longint): longint; override;
+    function Write(const Buffer; Count: longint): longint; override;
+    function Seek(const Offset: int64; Origin: TSeekOrigin): int64; override;
+  end;
+
 function AnalyzeMFCQChunks(inFile: TStream): TMFCQChunkArrays;
 function AnalyzeMFCQChunks(const FileName: string): TMFCQChunkArrays;
 procedure Chunk2Stream(inFile: TStream; const chunk: TMFCQChunk; outFile: TStream;
@@ -98,10 +194,13 @@ procedure Chunk2Stream(inFile: TStream; const chunk: TMFCQChunk; outFile: TStrea
 
 procedure unpackMFCQ(fileName: string; cb: TProgressCallback = nil; const OutDir: string = '');
 procedure packMFCQ(oFile: string; const iFiles: TStringList; cb: TProgressCallback = nil;
-  ver: integer = 2; fast: boolean = False);
+  ver: integer = 2; fast: boolean = False; sign: boolean = False);
 procedure _packMFCQ(outFile: TStream; const iFiles: TStringList; cb: TProgressCallback = nil;
-  ver: integer = 2; fast: boolean = False);
+  ver: integer = 2; fast: boolean = False; sign: boolean = False);
 
+function Type2Ext(t: integer): string;
+function Ext2Type(const t: string): integer;
+function Size2Blocks(const FileName: string; bs: integer = $10000): integer;
 
 const
   signature_data: array[0..559] of byte = (
@@ -143,7 +242,7 @@ const
 
 implementation
 
-uses Math, crc, StrUtils, FileUtil;
+uses crc, StrUtils, FileUtil;
 
 type
   TBlockRange = record
@@ -174,72 +273,6 @@ const
   imageDMI_SIG2 = $93;
 
   defaultBlockSize = $10000;
-
-function AnalyzeFileBlocks(const FileName: string; BlockSize: integer = 4096): TBlockRangeArray;
-var
-  F: TFileStream;
-  Buf: TBytes;
-  BlockIndex: int64;
-  RangeStart: int64;
-  Count: integer;
-  InRange: boolean;
-  BytesRead: integer;
-begin
-  SetLength(Result, 0);
-  F := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
-  try
-    SetLength(Buf, BlockSize);
-    BlockIndex := 0;
-    InRange := False;
-    Count := 0;
-
-    while F.Position < F.Size do
-    begin
-      BytesRead := F.Read(Buf[0], BlockSize);
-      if BytesRead > 0 then
-      begin
-        if BytesRead < BlockSize then
-          SetLength(Buf, BytesRead);
-
-        if not IsFullFFBlock_Branchless(Buf, High(Buf)) then
-        begin
-          if not InRange then
-          begin
-            RangeStart := BlockIndex;
-            Count := 1;
-            InRange := True;
-          end
-          else
-            Inc(Count);
-        end
-        else
-        begin
-          if InRange then
-          begin
-            SetLength(Result, Length(Result) + 1);
-            Result[High(Result)].BlockIndex := RangeStart;
-            Result[High(Result)].Count := Count;
-            InRange := False;
-          end;
-        end;
-
-        if Length(Buf) <> BlockSize then
-          SetLength(Buf, BlockSize);
-      end;
-
-      Inc(BlockIndex);
-    end;
-
-    if InRange then
-    begin
-      SetLength(Result, Length(Result) + 1);
-      Result[High(Result)].BlockIndex := RangeStart;
-      Result[High(Result)].Count := Count;
-    end;
-  finally
-    F.Free;
-  end;
-end;
 
 function Type2Ext(t: integer): string;
 begin
@@ -306,8 +339,111 @@ begin
   if (fs mod bs) <> 0 then Inc(Result);
 end;
 
-procedure _packMFCQ(outFile: TStream; const iFiles: TStringList; cb: TProgressCallback = nil;
-  ver: integer = 2; fast: boolean = False);
+function AnalyzeFileBlocks(const FileName: string; BlockSize: integer = 4096): TBlockRangeArray;
+var
+  F: TFileStream;
+  Buf: TBytes;
+  BlockIndex, RangeStart: int64;
+  Count, Capacity, ResLen: integer;
+  InRange: boolean;
+  BytesRead: integer;
+
+  procedure AddRange(StartIdx: int64; Cnt: integer);
+  begin
+    if ResLen >= Capacity then
+    begin
+      Inc(Capacity, 64);
+      SetLength(Result, Capacity);
+    end;
+    Result[ResLen].BlockIndex := StartIdx;
+    Result[ResLen].Count := Cnt;
+    Inc(ResLen);
+  end;
+
+begin
+  ResLen := 0;
+  Capacity := 0;
+  SetLength(Result, 0);
+
+  F := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+  try
+    SetLength(Buf, BlockSize);
+    BlockIndex := 0;
+    InRange := False;
+    Count := 0;
+
+    while F.Position < F.Size do
+    begin
+      BytesRead := F.Read(Buf[0], BlockSize);
+      if BytesRead > 0 then
+      begin
+        if BytesRead < BlockSize then
+          SetLength(Buf, BytesRead);
+
+        if not IsFullFFBlock_Branchless(Buf, High(Buf)) then
+        begin
+          if not InRange then
+          begin
+            RangeStart := BlockIndex;
+            Count := 1;
+            InRange := True;
+          end
+          else
+            Inc(Count);
+        end
+        else
+        begin
+          if InRange then
+          begin
+            AddRange(RangeStart, Count);
+            InRange := False;
+          end;
+        end;
+
+        if Length(Buf) <> BlockSize then
+          SetLength(Buf, BlockSize);
+      end;
+      Inc(BlockIndex);
+    end;
+
+    if InRange then
+      AddRange(RangeStart, Count);
+
+    SetLength(Result, ResLen);
+  finally
+    F.Free;
+  end;
+end;
+
+{ TMFCQPackStream }
+
+constructor TMFCQPackStream.Create(const iFiles: TStringList; cb: TProgressCallback;
+  ver: integer; fast: boolean; sign: boolean);
+begin
+  inherited Create;
+  if not Assigned(iFiles) or (iFiles.Count = 0) then
+    raise Exception.Create('No input files specified');
+
+  FCb := cb;
+  FSign := sign;
+  FPosition := 0;
+  FBlockSize := defaultBlockSize;
+  FHeaderStream := TMemoryStream.Create;
+  FCurrentFileStreams := TFileStreamMap.Create([doOwnsValues]);
+
+  BuildHeadersAndMap(iFiles, ver, fast);
+end;
+
+destructor TMFCQPackStream.Destroy;
+begin
+  SetLength(FBlockMap, 0);
+  SetLength(FFiles, 0);
+  FreeAndNil(FCurrentFileStreams);
+  FreeAndNil(FHeaderStream);
+  inherited Destroy;
+end;
+
+procedure TMFCQPackStream.BuildHeadersAndMap(const iFiles: TStringList; ver: integer; fast: boolean);
 type
   TXRec = record
     cf1: TControlFileV1;
@@ -315,21 +451,6 @@ type
     arr1: array of TRunRecordV1;
     arr2: array of TRunRecordV2;
   end;
-var
-  inFile: TFileStream;
-  mhf1: TMultiHeaderFileV1;
-  mhf2: TMultiHeaderFileV2;
-  XRec: array of TXRec;
-  flags, i, j, k, s, bs, c: integer;
-  buf: TBytes;
-  tmps, params: TStringArray;
-  fileName: string;
-  blockIdx, blockOffset: int64;
-  totalFiles: integer;
-  range: TBlockRange;
-  XBRA: array of TBlockRangeArray;
-  xPos, Delta: int64;
-  dataSize, totalSize: int64;
 
   function GetValue(n: integer): cardinal;
   begin
@@ -339,13 +460,23 @@ var
       Result := 7 + ((n - 4) div 4) * 4;
   end;
 
+var
+  mhf1: TMultiHeaderFileV1;
+  mhf2: TMultiHeaderFileV2;
+  XRec: array of TXRec;
+  XBRA: array of TBlockRangeArray;
+  totalFiles, i, j, k, c: integer;
+  tmps, params: TStringArray;
+  fileName: string;
+  Delta, flags, dataSize, totalSize, xPos: int64;
+  curVirtOffset, blockIdx, blockOffset: int64;
+  buf: TBytes;
+  vMap: TVirtualBlockMap;
+  mapCount, mapCapacity: integer;
+  crcVal: dword;
 begin
-  if not Assigned(iFiles) or (iFiles.Count = 0) then
-    raise Exception.Create('No input files specified');
-
-  bs := defaultBlockSize;
   totalFiles := iFiles.Count;
-  fast := (ver = 2);
+  SetLength(FFiles, totalFiles);
   SetLength(XRec, totalFiles);
   SetLength(XBRA, totalFiles);
 
@@ -357,12 +488,15 @@ begin
 
   for i := 0 to totalFiles - 1 do
   begin
-    // Виправлений парсинг "filename=delta,flags"
     tmps := SplitString(iFiles[i], '=');
     fileName := ExpandFileName(tmps[0]);
+    FFiles[i] := fileName;
+
+    if not FileExists(fileName) then
+      raise Exception.CreateFmt('Input file not found: %s', [fileName]);
 
     Delta := 0;
-    Flags := 0;
+    flags := 0;
 
     if Length(tmps) > 1 then
     begin
@@ -370,22 +504,19 @@ begin
       if Length(params) > 0 then
         Delta := StrToIntDef(params[0], 0);
       if Length(params) > 1 then
-        Flags := StrToIntDef(params[1], 0)
+        flags := StrToIntDef(params[1], 0)
       else
-        Flags := IfThen((Length(fileName) > 0) and (fileName[Length(fileName)] = '!'), 2, 0);
+        flags := IfThen((Length(fileName) > 0) and (fileName[Length(fileName)] = '!'), 2, 0);
     end;
-
-    if not FileExists(fileName) then
-      raise Exception.CreateFmt('Input file not found: %s', [fileName]);
 
     if fast then
     begin
       SetLength(XBRA[i], 1);
       XBRA[i][0].BlockIndex := 0;
-      XBRA[i][0].Count := Size2Blocks(fileName, bs);
+      XBRA[i][0].Count := Size2Blocks(fileName, FBlockSize);
     end
     else
-      XBRA[i] := AnalyzeFileBlocks(fileName, bs);
+      XBRA[i] := AnalyzeFileBlocks(fileName, FBlockSize);
 
     c := Length(XBRA[i]);
     with XRec[i] do
@@ -395,9 +526,9 @@ begin
         FillChar(cf1, SizeOf(cf1), 0);
         cf1.magic := 'qcfp';
         cf1.version := 1;
-        cf1.blocksize := bs;
+        cf1.blocksize := FBlockSize;
         cf1.device := 0;
-        cf1.flags := Flags;
+        cf1.flags := flags;
         cf1.partition := 0;
         cf1.nrecords := GetValue(c);
         SetLength(arr1, cf1.nrecords);
@@ -416,7 +547,7 @@ begin
         FillChar(cf2, SizeOf(cf2), 0);
         cf2.magic := 'pfcq';
         cf2.version := $20000;
-        cf2.blocksize := bs;
+        cf2.blocksize := FBlockSize;
         cf2.rrecOffset := SizeOf(TControlFileV2);
         cf2.nrecords := c;
         cf2.length := SizeOf(TControlFileV2) + c * SizeOf(TRunRecordV2);
@@ -437,7 +568,6 @@ begin
     end;
   end;
 
-  // V2 Multiheader
   if ver > 1 then
   begin
     FillChar(mhf2, SizeOf(mhf2), 0);
@@ -458,8 +588,7 @@ begin
   else
     mhf1.headersz := $10000;
 
-  // === Write V1 headers ===
-  outFile.Position := SizeOf(mhf1);
+  FHeaderStream.Position := SizeOf(mhf1);
   if (ver and 1) = 1 then
   begin
     for i := 0 to totalFiles - 1 do
@@ -483,79 +612,483 @@ begin
 
         cf1.checksum := crc32(0, @buf[8], totalSize - 8);
         Move(cf1, buf[0], SizeOf(TControlFileV1));
-        outFile.WriteBuffer(buf[0], totalSize);
+        FHeaderStream.WriteBuffer(buf[0], totalSize);
       end;
     end;
   end;
 
-  xPos := outFile.Position;
+  xPos := FHeaderStream.Position;
   mhf1.flags := xPos;
 
-  outFile.Position := 0;
-  outFile.WriteBuffer(mhf1, SizeOf(mhf1));
-  outFile.Position := xPos;
+  FHeaderStream.Position := 0;
+  FHeaderStream.WriteBuffer(mhf1, SizeOf(mhf1));
+  FHeaderStream.Position := xPos;
 
-  // === Write V2 headers ===
   if (ver and 2) = 2 then
   begin
-    outFile.WriteBuffer(mhf2, SizeOf(mhf2));
+    FHeaderStream.WriteBuffer(mhf2, SizeOf(mhf2));
     for i := 0 to totalFiles - 1 do
     begin
       with XRec[i] do
       begin
-        outFile.WriteBuffer(cf2, SizeOf(TControlFileV2));
+        FHeaderStream.WriteBuffer(cf2, SizeOf(TControlFileV2));
         if cf2.nrecords > 0 then
-          outFile.WriteBuffer(arr2[0], cf2.nrecords * SizeOf(TRunRecordV2));
+          FHeaderStream.WriteBuffer(arr2[0], cf2.nrecords * SizeOf(TRunRecordV2));
       end;
     end;
   end;
 
-  // === Write data blocks ===
-  outFile.Position := mhf1.headersz;
-  SetLength(buf, bs);
+  if FHeaderStream.Size < mhf1.headersz then
+  begin
+    FHeaderStream.Position := mhf1.headersz - 1;
+    FHeaderStream.WriteByte(0);
+  end;
+
+  curVirtOffset := mhf1.headersz;
+  mapCount := 0;
+  mapCapacity := 128;
+  SetLength(FBlockMap, mapCapacity);
+
   for i := 0 to totalFiles - 1 do
   begin
-    tmps := SplitString(iFiles[i], '=');
-    fileName := ExpandFileName(tmps[0]);
-    inFile := TFileStream.Create(fileName, fmOpenRead or fmShareDenyNone);
-    try
-      if Assigned(cb) then
-        cb(fileName, -1, inFile.Size div bs);
-      for j := 0 to High(XBRA[i]) do
+    for j := 0 to High(XBRA[i]) do
+    begin
+      for k := 0 to XBRA[i][j].Count - 1 do
       begin
-        range := XBRA[i][j];
-        for k := 0 to range.Count - 1 do
+        blockIdx := XBRA[i][j].BlockIndex + k;
+        blockOffset := blockIdx * FBlockSize;
+
+        if mapCount >= mapCapacity then
         begin
-          blockIdx := range.BlockIndex + k;
-          blockOffset := blockIdx * bs;
-          if blockOffset >= inFile.Size then Continue;
+          Inc(mapCapacity, 128);
+          SetLength(FBlockMap, mapCapacity);
+        end;
 
-          s := bs;
-          if blockOffset + bs > inFile.Size then
-            s := inFile.Size - blockOffset;
+        vMap.VirtualOffset := curVirtOffset;
+        vMap.SourceFileIdx := i;
+        vMap.FileOffset := blockOffset;
+        vMap.BlockSize := FBlockSize;
 
-          if s <= 0 then Continue;
+        FBlockMap[mapCount] := vMap;
+        Inc(mapCount);
 
-          if Assigned(cb) then
-            cb(fileName, blockOffset div bs, inFile.Size div bs);
+        Inc(curVirtOffset, FBlockSize);
+      end;
+    end;
+  end;
 
-          inFile.Position := blockOffset;
-          FillChar(buf[0], bs, 0);
-          inFile.ReadBuffer(buf[0], s);
-          outFile.WriteBuffer(buf[0], bs);
+  SetLength(FBlockMap, mapCount);
+  FPayloadSize := curVirtOffset;
+
+  if FSign then
+  begin
+    Move(signature_data[0], FSignatureBuffer[0], SizeOf(signature_data));
+    FTotalSize := FPayloadSize + SizeOf(FSignatureBuffer);
+
+    // \u0420\u043e\u0437\u0440\u0430\u0445\u0443\u043d\u043e\u043a CRC32 \u0434\u043b\u044f \u043f\u0456\u0434\u043f\u0438\u0441\u0430\u043d\u043e\u0433\u043e \u0431\u043b\u043e\u043a\u0443
+    crcVal := crc32(0, nil, 0);
+    // 1. \u0425\u0435\u0434\u0435\u0440
+    crcVal := crc32(crcVal, FHeaderStream.Memory, FHeaderStream.Size);
+
+    // 2. \u0411\u043b\u043e\u043a\u0438 \u0434\u0430\u043d\u0438\u0445 \u0444\u0430\u0439\u043b\u0456\u0432
+    for i := 0 to High(FBlockMap) do
+    begin
+      SetLength(buf, FBlockMap[i].BlockSize);
+      FillChar(buf[0], FBlockMap[i].BlockSize, 0);
+      fileName := FFiles[FBlockMap[i].SourceFileIdx];
+      if FileExists(fileName) then
+      begin
+        with TFileStream.Create(fileName, fmOpenRead or fmShareDenyNone) do
+        try
+          if FBlockMap[i].FileOffset < Size then
+          begin
+            Position := FBlockMap[i].FileOffset;
+            Read(buf[0], Min(FBlockMap[i].BlockSize, Size - FBlockMap[i].FileOffset));
+          end;
+        finally
+          Free;
         end;
       end;
-
-      if Assigned(cb) then
-        cb(fileName, inFile.Size div bs, inFile.Size div bs);
-    finally
-      inFile.Free;
+      crcVal := crc32(crcVal, @buf[0], FBlockMap[i].BlockSize);
     end;
+
+    // 3. \u0421\u0438\u0433\u043d\u0430\u0442\u0443\u0440\u0430 (\u043a\u0440\u0456\u043c \u043e\u0441\u0442\u0430\u043d\u043d\u0456\u0445 4 \u0431\u0430\u0439\u0442 \u0434\u043b\u044f CRC)
+    crcVal := crc32(crcVal, @FSignatureBuffer[0], SizeOf(FSignatureBuffer) - 4);
+
+    // \u0417\u0430\u043f\u0438\u0441 \u043f\u043e\u0440\u0430\u0445\u043e\u0432\u0430\u043d\u043e\u0433\u043e CRC \u0432 \u043a\u0456\u043d\u0435\u0446\u044c \u043c\u0430\u0441\u0438\u0432\u0443 \u0441\u0438\u0433\u043d\u0430\u0442\u0443\u0440\u0438
+    Move(crcVal, FSignatureBuffer[SizeOf(FSignatureBuffer) - 4], SizeOf(dword));
+  end
+  else
+    FTotalSize := FPayloadSize;
+end;
+
+function TMFCQPackStream.GetSourceStream(FileIdx: integer): TFileStream;
+begin
+  if not FCurrentFileStreams.TryGetValue(FileIdx, Result) then
+  begin
+    Result := TFileStream.Create(FFiles[FileIdx], fmOpenRead or fmShareDenyNone);
+    FCurrentFileStreams.Add(FileIdx, Result);
+  end;
+end;
+
+function TMFCQPackStream.GetSize: int64;
+begin
+  Result := FTotalSize;
+end;
+
+function TMFCQPackStream.Seek(const Offset: int64; Origin: TSeekOrigin): int64;
+begin
+  case Origin of
+    soBeginning: FPosition := Offset;
+    soCurrent: Inc(FPosition, Offset);
+    soEnd: FPosition := FTotalSize + Offset;
+  end;
+
+  if FPosition < 0 then FPosition := 0;
+  if FPosition > FTotalSize then FPosition := FTotalSize;
+
+  Result := FPosition;
+end;
+
+function TMFCQPackStream.Read(var Buffer; Count: longint): longint;
+var
+  bytesRead, totalBytesToRead, bytesFromHeader, bytesFromSig: longint;
+  bufPtr: pbyte;
+  curPos, bytesToCopy, bytesToReadFromFile, relOffsetInBlock: int64;
+  lowIdx, highIdx, midIdx, foundIdx: integer;
+  srcStream: TFileStream;
+  fileSize: int64;
+  sigOffset: int64;
+begin
+  if (Count <= 0) or (FPosition >= FTotalSize) then
+    Exit(0);
+
+  totalBytesToRead := Min(Count, FTotalSize - FPosition);
+  bytesRead := 0;
+  bufPtr := @Buffer;
+  curPos := FPosition;
+
+  // 1. \u0427\u0438\u0442\u0430\u043d\u043d\u044f \u0445\u0435\u0434\u0435\u0440\u0430
+  if curPos < FHeaderStream.Size then
+  begin
+    bytesFromHeader := Min(totalBytesToRead, FHeaderStream.Size - curPos);
+    FHeaderStream.Position := curPos;
+    FHeaderStream.ReadBuffer(bufPtr^, bytesFromHeader);
+
+    Inc(bytesRead, bytesFromHeader);
+    Inc(curPos, bytesFromHeader);
+    Inc(bufPtr, bytesFromHeader);
+  end;
+
+  // 2. \u0427\u0438\u0442\u0430\u043d\u043d\u044f \u043f\u0435\u0439\u043b\u043e\u0430\u0434\u0443
+  while (bytesRead < totalBytesToRead) and (curPos < FPayloadSize) do
+  begin
+    foundIdx := -1;
+    lowIdx := 0;
+    highIdx := High(FBlockMap);
+
+    while lowIdx <= highIdx do
+    begin
+      midIdx := (lowIdx + highIdx) shr 1;
+      if (curPos >= FBlockMap[midIdx].VirtualOffset) and (curPos <
+        FBlockMap[midIdx].VirtualOffset + FBlockMap[midIdx].BlockSize) then
+      begin
+        foundIdx := midIdx;
+        Break;
+      end;
+
+      if curPos < FBlockMap[midIdx].VirtualOffset then
+        highIdx := midIdx - 1
+      else
+        lowIdx := midIdx + 1;
+    end;
+
+    if foundIdx = -1 then Break;
+
+    bytesToCopy := Min(totalBytesToRead - bytesRead, (FBlockMap[foundIdx].VirtualOffset +
+      FBlockMap[foundIdx].BlockSize) - curPos);
+
+    relOffsetInBlock := curPos - FBlockMap[foundIdx].VirtualOffset;
+    srcStream := GetSourceStream(FBlockMap[foundIdx].SourceFileIdx);
+    fileSize := srcStream.Size;
+
+    FillChar(bufPtr^, bytesToCopy, 0);
+
+    if FBlockMap[foundIdx].FileOffset + relOffsetInBlock < fileSize then
+    begin
+      bytesToReadFromFile := Min(bytesToCopy, fileSize - (FBlockMap[foundIdx].FileOffset +
+        relOffsetInBlock));
+      srcStream.Position := FBlockMap[foundIdx].FileOffset + relOffsetInBlock;
+      if bytesToReadFromFile > 0 then
+        srcStream.ReadBuffer(bufPtr^, bytesToReadFromFile);
+    end;
+
+    if Assigned(FCb) then
+      FCb(FFiles[FBlockMap[foundIdx].SourceFileIdx],
+        FBlockMap[foundIdx].FileOffset div FBlockSize,
+        (fileSize + FBlockSize - 1) div FBlockSize);
+
+    Inc(bytesRead, bytesToCopy);
+    Inc(curPos, bytesToCopy);
+    Inc(bufPtr, bytesToCopy);
+  end;
+
+  // 3. \u0427\u0438\u0442\u0430\u043d\u043d\u044f \u0441\u0438\u0433\u043d\u0430\u0442\u0443\u0440\u0438 (\u044f\u043a\u0449\u043e \u0430\u043a\u0442\u0438\u0432\u043e\u0432\u0430\u043d\u043e)
+  if FSign and (bytesRead < totalBytesToRead) and (curPos >= FPayloadSize) and (curPos < FTotalSize) then
+  begin
+    sigOffset := curPos - FPayloadSize;
+    bytesFromSig := Min(totalBytesToRead - bytesRead, SizeOf(FSignatureBuffer) - sigOffset);
+    if bytesFromSig > 0 then
+    begin
+      Move(FSignatureBuffer[sigOffset], bufPtr^, bytesFromSig);
+      Inc(bytesRead, bytesFromSig);
+      Inc(curPos, bytesFromSig);
+    end;
+  end;
+
+  FPosition := curPos;
+  Result := bytesRead;
+end;
+
+function TMFCQPackStream.Write(const Buffer; Count: longint): longint;
+begin
+  raise EStreamError.Create('TMFCQPackStream is read-only');
+end;
+
+{ TMFCQChunkStream }
+
+constructor TMFCQChunkStream.Create(ASourceStream: TStream; const AChunk: TMFCQChunk;
+  AVersion: TMFCQVersion; AOwnsSource: boolean);
+begin
+  inherited Create;
+  FSourceStream := ASourceStream;
+  FChunk := AChunk;
+  FVersion := AVersion;
+  FOwnsSource := AOwnsSource;
+  FPosition := 0;
+
+  if Length(FChunk.RR) > 0 then
+    FBaseOffset := FChunk.RR[0].Offset
+  else
+    FBaseOffset := 0;
+
+  BuildBlockMap;
+end;
+
+destructor TMFCQChunkStream.Destroy;
+begin
+  SetLength(FBlockMap, 0);
+  if FOwnsSource then
+    FreeAndNil(FSourceStream);
+  inherited Destroy;
+end;
+
+procedure TMFCQChunkStream.BuildBlockMap;
+var
+  i, j, MapIdx: integer;
+  CurrPhysOffset: int64;
+  LastRR: TRRChunk;
+begin
+  if FChunk.BlockCount <= 0 then
+  begin
+    FVirtualSize := 0;
+    Exit;
+  end;
+
+  SetLength(FBlockMap, FChunk.BlockCount);
+  CurrPhysOffset := FChunk.Offset;
+  MapIdx := 0;
+
+  for i := 0 to High(FChunk.RR) do
+  begin
+    for j := 0 to FChunk.RR[i].Count - 1 do
+    begin
+      FBlockMap[MapIdx].VirtOffset := int64(FChunk.BlockSize) * ((FChunk.RR[i].Offset + j) - FBaseOffset);
+      FBlockMap[MapIdx].PhysOffset := CurrPhysOffset;
+      Inc(CurrPhysOffset, FChunk.BlockSize);
+      Inc(MapIdx);
+    end;
+  end;
+
+  LastRR := FChunk.RR[High(FChunk.RR)];
+  FVirtualSize := int64(FChunk.BlockSize) * ((LastRR.Offset + LastRR.Count) - FBaseOffset);
+end;
+
+function TMFCQChunkStream.Read(var Buffer; Count: longint): longint;
+var
+  BytesToRead, BytesRead, TotalRead: longint;
+  BufPtr: pbyte;
+  i: integer;
+  VirtStart, VirtEnd, PhysPos: int64;
+  ChunkOffset, ReadChunkSize: longint;
+begin
+  if (FPosition >= FVirtualSize) or (Count <= 0) then
+    Exit(0);
+
+  TotalRead := 0;
+  BytesToRead := Count;
+  if FPosition + BytesToRead > FVirtualSize then
+    BytesToRead := FVirtualSize - FPosition;
+
+  BufPtr := @Buffer;
+
+  for i := 0 to High(FBlockMap) do
+  begin
+    VirtStart := FBlockMap[i].VirtOffset;
+    VirtEnd := VirtStart + FChunk.BlockSize;
+
+    if (FPosition < VirtEnd) and ((FPosition + BytesToRead) > VirtStart) then
+    begin
+      if (FPosition + TotalRead) < VirtStart then
+      begin
+        ReadChunkSize := Min(VirtStart - (FPosition + TotalRead), BytesToRead - TotalRead);
+        FillChar(BufPtr^, ReadChunkSize, $FF);
+        Inc(TotalRead, ReadChunkSize);
+        Inc(BufPtr, ReadChunkSize);
+        if TotalRead >= BytesToRead then Break;
+      end;
+
+      ChunkOffset := (FPosition + TotalRead) - VirtStart;
+      PhysPos := FBlockMap[i].PhysOffset + ChunkOffset;
+      ReadChunkSize := Min(FChunk.BlockSize - ChunkOffset, BytesToRead - TotalRead);
+
+      FSourceStream.Position := PhysPos;
+      BytesRead := FSourceStream.Read(BufPtr^, ReadChunkSize);
+
+      Inc(TotalRead, BytesRead);
+      Inc(BufPtr, BytesRead);
+
+      if TotalRead >= BytesToRead then Break;
+    end;
+  end;
+
+  if TotalRead < BytesToRead then
+  begin
+    ReadChunkSize := BytesToRead - TotalRead;
+    FillChar(BufPtr^, ReadChunkSize, $FF);
+    Inc(TotalRead, ReadChunkSize);
+  end;
+
+  Inc(FPosition, TotalRead);
+  Result := TotalRead;
+end;
+
+function TMFCQChunkStream.Write(const Buffer; Count: longint): longint;
+begin
+  raise EStreamError.Create('TMFCQChunkStream is read-only');
+end;
+
+function TMFCQChunkStream.Seek(const Offset: int64; Origin: TSeekOrigin): int64;
+begin
+  case Origin of
+    soBeginning: FPosition := Offset;
+    soCurrent: Inc(FPosition, Offset);
+    soEnd: FPosition := FVirtualSize + Offset;
+  end;
+
+  if FPosition < 0 then FPosition := 0;
+  if FPosition > FVirtualSize then FPosition := FVirtualSize;
+
+  Result := FPosition;
+end;
+
+{ TMFCQContainerStream }
+
+constructor TMFCQContainerStream.Create(const AFileName: string);
+begin
+  Create(TFileStream.Create(AFileName, fmOpenRead or fmShareDenyNone), True);
+end;
+
+constructor TMFCQContainerStream.Create(ASourceStream: TStream; AOwnsSource: boolean);
+begin
+  inherited Create;
+  FSourceStream := ASourceStream;
+  FOwnsSource := AOwnsSource;
+  FChunks := AnalyzeMFCQChunks(FSourceStream);
+  FVersion := DetectVersion;
+end;
+
+destructor TMFCQContainerStream.Destroy;
+begin
+  if FOwnsSource then
+    FreeAndNil(FSourceStream);
+  inherited Destroy;
+end;
+
+function TMFCQContainerStream.DetectVersion: TMFCQVersion;
+var
+  HasV1, HasV2: boolean;
+begin
+  HasV1 := Length(FChunks.V1) > 0;
+  HasV2 := Length(FChunks.V2) > 0;
+
+  if HasV1 and HasV2 then
+    Result := mfcqHybrid
+  else if HasV2 then
+    Result := mfcqV2
+  else if HasV1 then
+    Result := mfcqV1
+  else
+    Result := mfcqUnknown;
+end;
+
+function TMFCQContainerStream.GetChunkCountV1: integer;
+begin
+  Result := Length(FChunks.V1);
+end;
+
+function TMFCQContainerStream.GetChunkCountV2: integer;
+begin
+  Result := Length(FChunks.V2);
+end;
+
+function TMFCQContainerStream.GetTotalChunkCount: integer;
+begin
+  if FVersion = mfcqV2 then
+    Result := GetChunkCountV2
+  else if FVersion = mfcqV1 then
+    Result := GetChunkCountV1
+  else
+    Result := Max(GetChunkCountV1, GetChunkCountV2);
+end;
+
+function TMFCQContainerStream.GetChunkStreamV1(Index: integer): TMFCQChunkStream;
+begin
+  if (Index < 0) or (Index >= Length(FChunks.V1)) then
+    raise EListError.CreateFmt('V1 Chunk Index %d out of bounds', [Index]);
+  Result := TMFCQChunkStream.Create(FSourceStream, FChunks.V1[Index], mfcqV1, False);
+end;
+
+function TMFCQContainerStream.GetChunkStreamV2(Index: integer): TMFCQChunkStream;
+begin
+  if (Index < 0) or (Index >= Length(FChunks.V2)) then
+    raise EListError.CreateFmt('V2 Chunk Index %d out of bounds', [Index]);
+  Result := TMFCQChunkStream.Create(FSourceStream, FChunks.V2[Index], mfcqV2, False);
+end;
+
+function TMFCQContainerStream.GetChunkStream(Index: integer): TMFCQChunkStream;
+begin
+  if Length(FChunks.V2) > 0 then
+    Result := GetChunkStreamV2(Index)
+  else
+    Result := GetChunkStreamV1(Index);
+end;
+
+procedure _packMFCQ(outFile: TStream; const iFiles: TStringList; cb: TProgressCallback = nil;
+  ver: integer = 2; fast: boolean = False; sign: boolean = False);
+var
+  packStream: TMFCQPackStream;
+begin
+  packStream := TMFCQPackStream.Create(iFiles, cb, ver, fast, sign);
+  try
+    outFile.CopyFrom(packStream, packStream.Size);
+  finally
+    packStream.Free;
   end;
 end;
 
 procedure packMFCQ(oFile: string; const iFiles: TStringList; cb: TProgressCallback = nil;
-  ver: integer = 2; fast: boolean = False);
+  ver: integer = 2; fast: boolean = False; sign: boolean = False);
 var
   outFile: TFileStream;
 begin
@@ -564,7 +1097,7 @@ begin
 
   outFile := TFileStream.Create(ExpandFileName(oFile), fmCreate);
   try
-    _packMFCQ(outFile, iFiles, cb, ver, fast);
+    _packMFCQ(outFile, iFiles, cb, ver, fast, sign);
   finally
     FreeAndNil(outFile);
   end;
@@ -644,6 +1177,7 @@ begin
   if fileSize < SizeOf(mhf1) then
     raise Exception.Create('File too small');
 
+  inFile.Position := 0;
   inFile.ReadBuffer(mhf1, SizeOf(mhf1));
   if mhf1.magic <> 'mfcq' then raise Exception.Create('Bad magic');
 
@@ -762,7 +1296,6 @@ begin
     begin
       targetOffset := int64(chunk.BlockSize) * ((chunk.RR[i].Offset + j) - baseOffset);
 
-      // Якщо є розрив в адресації блоків, заповнюємо $FF
       if outFile.Position < targetOffset then
       begin
         gapSize := targetOffset - outFile.Position;
@@ -808,7 +1341,6 @@ begin
   if Length(Chunks.V2) > 0 then v := v + 2;
   if v = 0 then Exit;
 
-  // Визначаємо цільову директорію для збереження
   if OutDir <> '' then
   begin
     targetDir := IncludeTrailingPathDelimiter(OutDir);
@@ -842,7 +1374,6 @@ begin
           bc := Chunks.V1[i].BlockCount;
         end;
 
-        // Повний шлях для створення вихідного файлу
         fullPath := targetDir + outFileName;
 
         outFile := TFileStream.Create(fullPath, fmCreate);
@@ -851,12 +1382,10 @@ begin
           begin
             Chunk2Stream(inFile, Chunks.V1[i], outFile, cb, fullPath);
 
-            // Безпечна перевірка наявності елемента у масиві RR
             firstRunOffset := 0;
             if Length(Chunks.V1[i].RR) > 0 then
               firstRunOffset := Chunks.V1[i].RR[0].Offset;
 
-            // Формуємо відносне ім'я для списку lst з метаданими
             outFileName := outFileName + '=' + IntToStr(firstRunOffset) + ',' +
               IntToStr(Chunks.V1[i].Flags);
           end
@@ -875,7 +1404,6 @@ begin
         end;
       end;
 
-      // Зберігаємо .lst у цільову директорію
       lstFile.SaveToFile(targetDir + ChangeFileExt(baseFileName, '.lst'));
     finally
       FreeAndNil(lstFile);

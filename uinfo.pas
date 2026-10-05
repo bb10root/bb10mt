@@ -183,9 +183,6 @@ type
   end;
   PDRAM_Info = ^TDRAM_Info;
 
-//var
-//  dummy_signature: TBytes;
-
 type
   TFourInts = array[0..3] of byte;
   PFourInts = ^TFourInts;
@@ -207,7 +204,6 @@ function EMMCVendorByID(id: byte): string;
 function DRAMVendorByID(id: byte): string;
 function HWVtoString(val: THVW): string;
 function DecodeBlocked(buf: TBytes): TStringList;
-procedure GenDummySig(var Buf: TBytes);
 
 implementation
 
@@ -385,27 +381,6 @@ begin
 
   SetLength(Result, Count);
   Stream.Position := savedp;
-end;
-
-procedure GenDummySig(var Buf: TBytes);
-begin
-  if Length(Buf) <> 560 then
-    SetLength(Buf, 560);
-
-  FillChar(Buf[0], 560, $00);
-
-  PLongWord(@Buf[$24])^ := $00000088;
-  PLongWord(@Buf[$B0])^ := $000000BC;
-  PLongWord(@Buf[$B4])^ := $00010001;
-  PLongWord(@Buf[$B8])^ := $B5A60BFD;
-  PLongWord(@Buf[$E0])^ := $00000088;
-  PLongWord(@Buf[$16C])^ := $000000BC;
-  PLongWord(@Buf[$170])^ := $00010001;
-  PLongWord(@Buf[$174])^ := $C6B71C0E;
-  PLongWord(@Buf[$180])^ := $00000080;
-  PLongWord(@Buf[$220])^ := $000000B4;
-  PLongWord(@Buf[$224])^ := $00010001;
-  PLongWord(@Buf[$228])^ := $D7C82D1F;
 end;
 
 function EncodeVersion(major, minor, maint, build: word; isProd: boolean): cardinal;

@@ -16,17 +16,17 @@ uses
   uRCFS,
   uQCFM,
   uRAW,
-  uNet, uBatch;
+  uNet,
+  uBatch;
 
   {$R *.res}
-
 
 var
   App: ICLIApplication;
 
 
 begin
-  App := CreateCLIApplication('BB10 MultiTool', '0.6.0.0(beta 3)');
+  App := CreateCLIApplication('BB10 MultiTool', '0.6.0.0(beta 4)');
   // Register command
   App.RegisterCommand(QNX6cmd);
   App.RegisterCommand(UnPack);

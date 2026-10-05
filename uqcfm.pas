@@ -63,7 +63,7 @@ var
 
 implementation
 
-uses qcfm, uInfo, StrUtils, ldr, uMisc, uAutoloader;
+uses qcfm, ldr, uMisc, uAutoloader;
 
 var
   pb: IProgressIndicator = nil;
@@ -92,6 +92,7 @@ function TSplitCommand.Execute: integer;
 var
   fileName, outDir, tmpS: string;
 begin
+  Result := 0;
   GetParameterValue('--input', fileName);
   fileName := ExpandFileName(fileName);
   outDir := '';
@@ -108,6 +109,7 @@ function TALLoadersCommand.Execute: integer;
 var
   fileName, outDir: string;
 begin
+  Result := 0;
   GetParameterValue('--input', fileName);
   GetParameterValue('--output', outDir);
   if FileExists(fileName) then
@@ -115,18 +117,24 @@ begin
 end;
 
 
+function GetFullPath(const AFileName, ABasePath: string): string;
+begin
+  if (ABasePath <> '') and (ExtractFilePath(AFileName) = '') then
+    Result := ExpandFileName(IncludeTrailingPathDelimiter(ABasePath) + AFileName)
+  else
+    Result := ExpandFileName(AFileName);
+end;
+
 function TPackCommand.Execute: integer;
 var
   mfcqFile, inputList, inputInline, fileName: string;
   vers, files: TStringList;
-  i: integer;
+  i, eqIndex: integer;
   ver: integer;
-  tmps: string;
+  rawFileName, extraInfo, basePath, fullInputPath, line, tmps: string;
   fast, sign: boolean;
   outFile: TFileStream;
-  xxx: TStringArray;
   crc: cardinal;
-  dummy_signature : array of byte;
 begin
   Result := 0;
   ver := 0;
@@ -158,20 +166,48 @@ begin
 
   files := TStringList.Create;
   try
-    // Завантажити список файлів
-    if (inputList <> '') and FileExists(ExpandFileName(inputList)) then
-      files.LoadFromFile(ExpandFileName(inputList));
+    basePath := '';
 
-    // Додати файли з --input
-    if inputInline <> '' then
+    if (inputList <> '') then
+    begin
+      fullInputPath := ExpandFileName(inputList);
+      if FileExists(fullInputPath) then
+      begin
+        basePath := ExtractFilePath(fullInputPath);
+        files.LoadFromFile(fullInputPath);
+      end;
+    end;
+
+    if (inputInline <> '') then
       files.AddCommaText(inputInline);
 
-    // Очистити список від неіснуючих файлів
     for i := files.Count - 1 downto 0 do
     begin
-      xxx := SplitString(files[i], '=');
-      fileName := ExpandFileName(xxx[0]);
-      if not FileExists(fileName) then
+      line := Trim(files[i]);
+      if line = '' then
+      begin
+        files.Delete(i);
+        Continue;
+      end;
+
+      // Відокремлюємо шлях до файлу від можливого значення після '='
+      eqIndex := Pos('=', line);
+      if eqIndex > 0 then
+      begin
+        rawFileName := Copy(line, 1, eqIndex - 1);
+        extraInfo := Copy(line, eqIndex, MaxInt);
+      end
+      else
+      begin
+        rawFileName := line;
+        extraInfo := '';
+      end;
+
+      fileName := GetFullPath(rawFileName, basePath);
+
+      if FileExists(fileName) then
+        files[i] := fileName + extraInfo
+      else
         files.Delete(i);
     end;
 
@@ -182,23 +218,7 @@ begin
     end;
 
     TConsole.WriteLn('Packing files into container...', ccCyan);
-    packMFCQ(mfcqFile, files, @qcfm_callback, ver, fast);
-    if sign then
-    begin
-      outFile := TFileStream.Create(ExpandFileName(mfcqFile), fmOpenReadWrite or fmShareDenyWrite);
-      try
-        //GenDummySig(dummy_signature);
-        outFile.Seek(0, soEnd);
-        //outFile.Write(dummy_signature[0], Length(dummy_signature));
-        outFile.Write(signature_data[0], Length(signature_data));
-        crc := CRC32FromStream(outFile, 0, outFile.Size - 4);
-        outFile.Seek(-4, soEnd);
-        outFile.WriteDWord(crc);
-      finally
-        FreeAndNil(outFile);
-      end;
-    end;
-
+    packMFCQ(mfcqFile, files, @qcfm_callback, ver, fast, sign);
 
   finally
     files.Free;
@@ -210,6 +230,7 @@ var
   mfcqFile: TFileName;
   outDir, tmpS: string;
 begin
+  Result := 0;
   if not GetParameterValue('--container', mfcqFile) then
   begin
     TConsole.WriteLn('Error: qcfm container file is required', ccRed);
@@ -226,6 +247,7 @@ end;
 
 function TAutoloaderCommand.Execute: integer;
 begin
+  Result := 0;
 
 end;
 
@@ -234,7 +256,6 @@ var
   loaderFile, inputList, inputInline, fileName, vers, capexe: string;
   files: TStringList;
   i, ver: integer;
-  fast: boolean;
 begin
   Result := 0;
 
@@ -242,7 +263,7 @@ begin
   GetParameterValue('--list', inputList);
   GetParameterValue('--input', inputInline);
   GetParameterValue('--cap', capexe);
-  GetParameterValue('--ver', vers);
+  GetParameterValue('--versions', vers);
   ver := StrToIntDef(vers, 2);
 
   files := TStringList.Create;
@@ -325,7 +346,7 @@ initialization
   ALCreate.AddPathParameter('-c', '--cap', 'cap.exe file', False, 'cap.exe');
   ALCreate.AddArrayParameter('-i', '--input', 'input files');
   ALCreate.AddPathParameter('-l', '--list', 'input files list');
-  ALCreate.AddIntegerParameter('', '--ver', 'cap tail version', False, '2');
+  ALCreate.AddIntegerParameter('', '--versions', 'cap tail version', False, '2');
 
   ALExtract := TALExtractCommand.Create('extract', 'Extract cap.exe from autoloader');
   ALExtract.AddPathParameter('-i', '--input', 'Autoloader file', True);

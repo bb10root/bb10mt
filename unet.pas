@@ -151,6 +151,14 @@ begin
   PromptShown := False;
   Stop := False; // Скидаємо прапорець перед виконанням
 
+  {$IFDEF UNIX}
+  fpSignal(SIGINT, @HandleSigInt);
+  {$ENDIF}
+
+  {$IFDEF MSWINDOWS}
+  SetConsoleCtrlHandler(@ConsoleHandler, True);
+  {$ENDIF}
+
   BBs := GetBlackBerryInterfaces;
   if Length(BBs) = 0 then
   begin
@@ -230,13 +238,5 @@ initialization
   NETCommand.AddStringParameter('-p', '--password', 'device password', True);
   NETCommand.AddPathParameter('-k', '--sshPublicKey',
     'Path to public key (RSA) to install on device.', True);
-
-  {$IFDEF UNIX}
-  fpSignal(SIGINT, @HandleSigInt);
-  {$ENDIF}
-
-  {$IFDEF MSWINDOWS}
-  SetConsoleCtrlHandler(@ConsoleHandler, True);
-  {$ENDIF}
 
 end.

@@ -91,8 +91,8 @@ uses
 
 const
   PATH_REGISTERED_APPS = '/var/pps/system/installer/registeredapps/applications';
-  PATH_APP_DETAILS      = '/var/pps/system/installer/appdetails';
-  PATH_APPS             = '/apps';
+  PATH_APP_DETAILS = '/var/pps/system/installer/appdetails';
+  PATH_APPS = '/apps';
 
 type
   TRegList = record
@@ -101,9 +101,10 @@ type
     Changed: boolean;
   end;
 
-{ Private Helper Functions }
+  { Private Helper Functions }
 
-function ApplyChmodByInode(FS: TQNX6Fs; Idx: DWord; const Path: string; Mode: integer; Recursive: boolean): integer; forward;
+function ApplyChmodByInode(FS: TQNX6Fs; Idx: DWord; const Path: string; Mode: integer;
+  Recursive: boolean): integer; forward;
 
 function ApplyChmod(FS: TQNX6Fs; const Path: string; Mode: integer; Recursive: boolean): integer;
 var
@@ -123,7 +124,8 @@ begin
   Result := ApplyChmodByInode(FS, Idx, Path, Mode, Recursive);
 end;
 
-function ApplyChmodByInode(FS: TQNX6Fs; Idx: DWord; const Path: string; Mode: integer; Recursive: boolean): integer;
+function ApplyChmodByInode(FS: TQNX6Fs; Idx: DWord; const Path: string; Mode: integer;
+  Recursive: boolean): integer;
 var
   I, Count: integer;
   Inode: TQNX6_DInode;
@@ -203,8 +205,8 @@ begin
       SetLength(RDI, 0);
     end;
 
-    if Uid <> -1 then Inode.uid := Cardinal(Uid);
-    if Gid <> -1 then Inode.gid := Cardinal(Gid);
+    if Uid <> -1 then Inode.uid := cardinal(Uid);
+    if Gid <> -1 then Inode.gid := cardinal(Gid);
 
     FS.SetInode(Idx, Inode);
 
@@ -217,9 +219,9 @@ begin
     TConsole.WriteLn(Format('chown: [ERROR] Path "%s" not found', [Path]));
 end;
 
-function ReplaceInStream(Stream: TMemoryStream; const OldStr, NewStr: RawByteString): boolean;
+function ReplaceInStream(Stream: TMemoryStream; const OldStr, NewStr: rawbytestring): boolean;
 var
-  DataStr, ModifiedStr: RawByteString;
+  DataStr, ModifiedStr: rawbytestring;
 begin
   Result := False;
   if (Stream = nil) or (Stream.Size = 0) or (OldStr = '') then Exit;
@@ -241,7 +243,8 @@ begin
   Stream.Position := 0;
 end;
 
-function LoadPPSList(FS: TQNX6Fs; const FilePath: string; TargetList: TStringList; Stream: TMemoryStream): boolean;
+function LoadPPSList(FS: TQNX6Fs; const FilePath: string; TargetList: TStringList;
+  Stream: TMemoryStream): boolean;
 begin
   Result := False;
   Stream.Clear;
@@ -253,7 +256,8 @@ begin
   end;
 end;
 
-function SavePPSList(FS: TQNX6Fs; const FilePath: string; SourceList: TStringList; Stream: TMemoryStream): boolean;
+function SavePPSList(FS: TQNX6Fs; const FilePath: string; SourceList: TStringList;
+  Stream: TMemoryStream): boolean;
 begin
   Stream.Clear;
   SourceList.SaveToStream(Stream);
@@ -317,11 +321,9 @@ end;
 
 function TPushCommand.Execute(const Args: array of string): integer;
 var
-  SrcPath, DstPath, InPath, OutPath, RelPath: string;
-  DirList: TStringList;
-  Stream: TMemoryStream;
+  SrcPath, DstPath: string;
   IsDir: boolean;
-  CopiedCount: integer;
+  PushedCount: integer;
 begin
   Result := -1;
 
@@ -345,107 +347,41 @@ begin
   if (DstPath = '') or (DstPath[1] <> '/') then
     DstPath := '/' + DstPath;
 
+  // Обробка одиничного файлу
   if not IsDir then
   begin
     if DstPath.EndsWith('/') then
-    begin
-      qnx6_MkDir(FFS, DstPath, True);
       DstPath := DstPath + ExtractFileName(SrcPath);
+
+    if qnx6_PushFile(FFS, SrcPath, DstPath) = 0 then
+    begin
+      TConsole.WriteLn(Format('[INFO] Pushed file "%s" -> "%s"', [SrcPath, DstPath]));
+      Exit(0);
     end
     else
-      qnx6_MkDir(FFS, ExtractPOSIXFilePath(DstPath), True);
-
-    Stream := TMemoryStream.Create;
-    try
-      try
-        Stream.LoadFromFile(SrcPath);
-        FFS.CreateFile(PChar(DstPath), &666);
-        if qnx6_writeFile(FFS, DstPath, Stream) <> 0 then
-        begin
-          TConsole.WriteLn(Format('[ERROR] Failed to write file "%s"', [DstPath]));
-          Exit(3);
-        end;
-        TConsole.WriteLn(Format('[INFO] Pushed file "%s" -> "%s"', [SrcPath, DstPath]));
-      except
-        on E: Exception do
-        begin
-          TConsole.WriteLn(Format('[ERROR] Failed to copy file: %s', [E.Message]));
-          Exit(4);
-        end;
-      end;
-    finally
-      FreeAndNil(Stream);
+    begin
+      TConsole.WriteLn(Format('[ERROR] Failed to push file "%s"', [SrcPath]));
+      Exit(3);
     end;
-
-    Exit(0);
   end;
+
+  // Обробка каталогу та всього піддерева
+  if DstPath.EndsWith('/') then
+    DstPath := DstPath + ExtractFileName(ExcludeTrailingPathDelimiter(SrcPath));
 
   TConsole.WriteLn(Format('[INFO] Pushing directory structure from "%s" to "%s"...', [SrcPath, DstPath]));
-  qnx6_MkDir(FFS, DstPath, True);
 
-  DirList := FindAllDirectories(SrcPath);
-  try
-    if Assigned(DirList) then
-    begin
-      for InPath in DirList do
-      begin
-        RelPath := ExtractRelativePath(IncludeTrailingPathDelimiter(SrcPath), InPath);
-        if (RelPath = '') or (RelPath = '.') then Continue;
-
-        OutPath := Path2QNX(EnsurePOSIXTrailingSlash(DstPath) + RelPath);
-        qnx6_MkDir(FFS, OutPath, True);
-        TConsole.WriteLn(Format('[INFO] Created directory "%s"', [OutPath]));
-      end;
-    end;
-  finally
-    FreeAndNil(DirList);
+  PushedCount := qnx6_PushDir(FFS, SrcPath, DstPath);
+  if PushedCount >= 0 then
+  begin
+    TConsole.WriteLn(Format('[INFO] Push completed successfully. Total files pushed: %d', [PushedCount]));
+    Result := 0;
+  end
+  else
+  begin
+    TConsole.WriteLn(Format('[ERROR] Failed to push directory "%s"', [SrcPath]));
+    Result := 4;
   end;
-
-  CopiedCount := 0;
-  Stream := TMemoryStream.Create;
-  try
-    try
-      DirList := FindAllFiles(SrcPath, '*');
-      if Assigned(DirList) then
-      begin
-        for InPath in DirList do
-        begin
-          RelPath := ExtractRelativePath(IncludeTrailingPathDelimiter(SrcPath), InPath);
-          OutPath := Path2QNX(EnsurePOSIXTrailingSlash(DstPath) + RelPath);
-
-          qnx6_MkDir(FFS, ExtractPOSIXFilePath(OutPath), True);
-
-          FFS.CreateFile(PChar(OutPath), &666);
-          try
-            Stream.Clear;
-            Stream.LoadFromFile(InPath);
-            if qnx6_writeFile(FFS, OutPath, Stream) <> 0 then
-              TConsole.WriteLn(Format('[ERROR] Failed to write file "%s"', [OutPath]))
-            else
-            begin
-              TConsole.WriteLn(Format('[INFO] Pushed "%s" -> "%s"', [RelPath, OutPath]));
-              Inc(CopiedCount);
-            end;
-          except
-            on E: Exception do
-              TConsole.WriteLn(Format('[ERROR] Failed to read local file "%s": %s', [InPath, E.Message]));
-          end;
-        end;
-      end;
-      TConsole.WriteLn(Format('[INFO] Push completed. Total files pushed: %d', [CopiedCount]));
-    except
-      on E: Exception do
-      begin
-        TConsole.WriteLn(Format('[ERROR] Directory scanning error: %s', [E.Message]));
-        Exit(5);
-      end;
-    end;
-  finally
-    FreeAndNil(DirList);
-    FreeAndNil(Stream);
-  end;
-
-  Result := 0;
 end;
 
 { TTouchCommand }
@@ -680,7 +616,8 @@ begin
     end
     else
     begin
-      TConsole.WriteLn(Format('[NOTICE] Target string "%s" not found in "%s". File unchanged.', [OldVal, TargetFile]));
+      TConsole.WriteLn(Format('[NOTICE] Target string "%s" not found in "%s". File unchanged.',
+        [OldVal, TargetFile]));
     end;
 
     Result := 0;
@@ -753,7 +690,8 @@ begin
 
     if qnx6_readDir(FFS, PATH_APPS, AppsEntries) = 0 then
     begin
-      TConsole.WriteLn(Format('[INFO] Starting application removal process for %d target(s)...', [BlackList.Count]));
+      TConsole.WriteLn(Format('[INFO] Starting application removal process for %d target(s)...',
+        [BlackList.Count]));
       RegChanged := False;
 
       for BlacklistedApp in BlackList do
@@ -789,7 +727,8 @@ begin
             if qnx6_RmDir(FFS, AppPath, True) then
               TConsole.WriteLn(Format('[INFO] Removed "%s" from "%s"', [AppsEntries[J].Name, PATH_APPS]))
             else
-              TConsole.WriteLn(Format('[ERROR] Failed to remove "%s" from "%s"', [AppsEntries[J].Name, PATH_APPS]));
+              TConsole.WriteLn(Format('[ERROR] Failed to remove "%s" from "%s"',
+                [AppsEntries[J].Name, PATH_APPS]));
           end;
         end;
 
@@ -889,7 +828,8 @@ begin
         end
         else
         begin
-          TConsole.WriteLn(Format('rm: [ERROR] Cannot remove "%s": Directory or file removal failed', [ArgStr]));
+          TConsole.WriteLn(Format('rm: [ERROR] Cannot remove "%s": Directory or file removal failed',
+            [ArgStr]));
           Inc(FailCount);
         end;
       end
@@ -909,7 +849,8 @@ begin
           end
           else
           begin
-            TConsole.WriteLn(Format('rm: [ERROR] Cannot remove "%s": No such file or directory not empty', [ArgStr]));
+            TConsole.WriteLn(Format('rm: [ERROR] Cannot remove "%s": No such file or directory not empty',
+              [ArgStr]));
             Inc(FailCount);
           end;
         end;
@@ -966,7 +907,8 @@ begin
 
     if SL.IndexOf(NewString) <> -1 then
     begin
-      TConsole.WriteLn(Format('[NOTICE] String "%s" already exists in "%s". Skipping.', [NewString, FilePath]));
+      TConsole.WriteLn(Format('[NOTICE] String "%s" already exists in "%s". Skipping.',
+        [NewString, FilePath]));
       Exit(0);
     end;
 
