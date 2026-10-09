@@ -158,6 +158,8 @@ type
     BlockSize: integer;
   end;
 
+  AVirtualBlockMap = array of TVirtualBlockMap;
+
   TFileStreamMap = specialize TObjectDictionary<integer, TFileStream>;
 
   TMFCQPackStream = class(TStream)
@@ -172,6 +174,8 @@ type
     FBlockSize: integer;
     FCb: TProgressCallback;
     FSign: boolean;
+    FSigFinalized: boolean;
+    FCrcVal: dword;
     FSignatureBuffer: array[0..559] of byte;
     procedure BuildHeadersAndMap(const iFiles: TStringList; ver: integer; fast: boolean);
     function GetSourceStream(FileIdx: integer): TFileStream;
@@ -185,6 +189,12 @@ type
     function Read(var Buffer; Count: longint): longint; override;
     function Write(const Buffer; Count: longint): longint; override;
     function Seek(const Offset: int64; Origin: TSeekOrigin): int64; override;
+
+    property Files: TStringArray read FFiles;
+    property BlockMap: AVirtualBlockMap read FBlockMap;
+    property IsSigned: boolean read FSign;
+    property PayloadSize: int64 read FPayloadSize;
+    property BlockSize: integer read FBlockSize;
   end;
 
 function AnalyzeMFCQChunks(inFile: TStream): TMFCQChunkArrays;
@@ -390,19 +400,21 @@ begin
           end
           else
             Inc(Count);
-        end
-        else
-        begin
-          if InRange then
-          begin
-            AddRange(RangeStart, Count);
-            InRange := False;
-          end;
         end;
-
-        if Length(Buf) <> BlockSize then
-          SetLength(Buf, BlockSize);
       end;
+
+      if (BytesRead < BlockSize) or IsFullFFBlock_Branchless(Buf, High(Buf)) then
+      begin
+        if InRange then
+        begin
+          AddRange(RangeStart, Count);
+          InRange := False;
+        end;
+      end;
+
+      if Length(Buf) <> BlockSize then
+        SetLength(Buf, BlockSize);
+
       Inc(BlockIndex);
     end;
 
@@ -426,7 +438,9 @@ begin
 
   FCb := cb;
   FSign := sign;
+  FSigFinalized := False;
   FPosition := 0;
+  FCrcVal := crc32(0, nil, 0);
   FBlockSize := defaultBlockSize;
   FHeaderStream := TMemoryStream.Create;
   FCurrentFileStreams := TFileStreamMap.Create([doOwnsValues]);
@@ -452,7 +466,7 @@ type
     arr2: array of TRunRecordV2;
   end;
 
-  function GetValue(n: integer): cardinal;
+  function GetValue(n: integer): cardinal; inline;
   begin
     if n <= 3 then
       Result := 3
@@ -472,8 +486,7 @@ var
   curVirtOffset, blockIdx, blockOffset: int64;
   buf: TBytes;
   vMap: TVirtualBlockMap;
-  mapCount, mapCapacity: integer;
-  crcVal: dword;
+  mapCount, totalBlocksCount: integer;
 begin
   totalFiles := iFiles.Count;
   SetLength(FFiles, totalFiles);
@@ -485,6 +498,8 @@ begin
   mhf1.version := 1;
   mhf1.nheaders := totalFiles;
   mhf1.flags := IfThen(ver > 1, SizeOf(TMultiHeaderFileV1), 0);
+
+  totalBlocksCount := 0;
 
   for i := 0 to totalFiles - 1 do
   begin
@@ -519,6 +534,10 @@ begin
       XBRA[i] := AnalyzeFileBlocks(fileName, FBlockSize);
 
     c := Length(XBRA[i]);
+
+    for j := 0 to c - 1 do
+      Inc(totalBlocksCount, XBRA[i][j].Count);
+
     with XRec[i] do
     begin
       if (ver and 1) = 1 then
@@ -588,7 +607,9 @@ begin
   else
     mhf1.headersz := $10000;
 
+  FHeaderStream.Clear;
   FHeaderStream.Position := SizeOf(mhf1);
+
   if (ver and 1) = 1 then
   begin
     for i := 0 to totalFiles - 1 do
@@ -605,7 +626,9 @@ begin
           cf1.datachecksum := 0;
 
         cf1.checksum := 0;
-        SetLength(buf, totalSize);
+        if Length(buf) < totalSize then
+          SetLength(buf, totalSize);
+
         Move(cf1, buf[0], SizeOf(TControlFileV1));
         if dataSize > 0 then
           Move(arr1[0], buf[SizeOf(TControlFileV1)], dataSize);
@@ -626,7 +649,7 @@ begin
 
   if (ver and 2) = 2 then
   begin
-    FHeaderStream.WriteBuffer(mhf2, SizeOf(mhf2));
+    FHeaderStream.WriteBuffer(mhf2, SizeOf(TMultiHeaderFileV2));
     for i := 0 to totalFiles - 1 do
     begin
       with XRec[i] do
@@ -640,14 +663,13 @@ begin
 
   if FHeaderStream.Size < mhf1.headersz then
   begin
-    FHeaderStream.Position := mhf1.headersz - 1;
-    FHeaderStream.WriteByte(0);
+    FHeaderStream.Position := FHeaderStream.Size;
+    FHeaderStream.SetSize(mhf1.headersz);
   end;
 
   curVirtOffset := mhf1.headersz;
   mapCount := 0;
-  mapCapacity := 128;
-  SetLength(FBlockMap, mapCapacity);
+  SetLength(FBlockMap, totalBlocksCount);
 
   for i := 0 to totalFiles - 1 do
   begin
@@ -657,12 +679,6 @@ begin
       begin
         blockIdx := XBRA[i][j].BlockIndex + k;
         blockOffset := blockIdx * FBlockSize;
-
-        if mapCount >= mapCapacity then
-        begin
-          Inc(mapCapacity, 128);
-          SetLength(FBlockMap, mapCapacity);
-        end;
 
         vMap.VirtualOffset := curVirtOffset;
         vMap.SourceFileIdx := i;
@@ -677,46 +693,12 @@ begin
     end;
   end;
 
-  SetLength(FBlockMap, mapCount);
   FPayloadSize := curVirtOffset;
 
   if FSign then
   begin
     Move(signature_data[0], FSignatureBuffer[0], SizeOf(signature_data));
     FTotalSize := FPayloadSize + SizeOf(FSignatureBuffer);
-
-    // \u0420\u043e\u0437\u0440\u0430\u0445\u0443\u043d\u043e\u043a CRC32 \u0434\u043b\u044f \u043f\u0456\u0434\u043f\u0438\u0441\u0430\u043d\u043e\u0433\u043e \u0431\u043b\u043e\u043a\u0443
-    crcVal := crc32(0, nil, 0);
-    // 1. \u0425\u0435\u0434\u0435\u0440
-    crcVal := crc32(crcVal, FHeaderStream.Memory, FHeaderStream.Size);
-
-    // 2. \u0411\u043b\u043e\u043a\u0438 \u0434\u0430\u043d\u0438\u0445 \u0444\u0430\u0439\u043b\u0456\u0432
-    for i := 0 to High(FBlockMap) do
-    begin
-      SetLength(buf, FBlockMap[i].BlockSize);
-      FillChar(buf[0], FBlockMap[i].BlockSize, 0);
-      fileName := FFiles[FBlockMap[i].SourceFileIdx];
-      if FileExists(fileName) then
-      begin
-        with TFileStream.Create(fileName, fmOpenRead or fmShareDenyNone) do
-        try
-          if FBlockMap[i].FileOffset < Size then
-          begin
-            Position := FBlockMap[i].FileOffset;
-            Read(buf[0], Min(FBlockMap[i].BlockSize, Size - FBlockMap[i].FileOffset));
-          end;
-        finally
-          Free;
-        end;
-      end;
-      crcVal := crc32(crcVal, @buf[0], FBlockMap[i].BlockSize);
-    end;
-
-    // 3. \u0421\u0438\u0433\u043d\u0430\u0442\u0443\u0440\u0430 (\u043a\u0440\u0456\u043c \u043e\u0441\u0442\u0430\u043d\u043d\u0456\u0445 4 \u0431\u0430\u0439\u0442 \u0434\u043b\u044f CRC)
-    crcVal := crc32(crcVal, @FSignatureBuffer[0], SizeOf(FSignatureBuffer) - 4);
-
-    // \u0417\u0430\u043f\u0438\u0441 \u043f\u043e\u0440\u0430\u0445\u043e\u0432\u0430\u043d\u043e\u0433\u043e CRC \u0432 \u043a\u0456\u043d\u0435\u0446\u044c \u043c\u0430\u0441\u0438\u0432\u0443 \u0441\u0438\u0433\u043d\u0430\u0442\u0443\u0440\u0438
-    Move(crcVal, FSignatureBuffer[SizeOf(FSignatureBuffer) - 4], SizeOf(dword));
   end
   else
     FTotalSize := FPayloadSize;
@@ -752,97 +734,103 @@ end;
 
 function TMFCQPackStream.Read(var Buffer; Count: longint): longint;
 var
-  bytesRead, totalBytesToRead, bytesFromHeader, bytesFromSig: longint;
+  totalToRead, bytesRead, chunkSize: longint;
   bufPtr: pbyte;
-  curPos, bytesToCopy, bytesToReadFromFile, relOffsetInBlock: int64;
-  lowIdx, highIdx, midIdx, foundIdx: integer;
+  curPos, relOffset: int64;
+  i: integer;
   srcStream: TFileStream;
-  fileSize: int64;
+  fileSize, bytesToReadFromFile: int64;
   sigOffset: int64;
+  payloadBytesRead: longint;
 begin
   if (Count <= 0) or (FPosition >= FTotalSize) then
     Exit(0);
 
-  totalBytesToRead := Min(Count, FTotalSize - FPosition);
+  totalToRead := Min(Count, FTotalSize - FPosition);
   bytesRead := 0;
   bufPtr := @Buffer;
   curPos := FPosition;
 
-  // 1. \u0427\u0438\u0442\u0430\u043d\u043d\u044f \u0445\u0435\u0434\u0435\u0440\u0430
+  // 1. Читання заголовочної частини
   if curPos < FHeaderStream.Size then
   begin
-    bytesFromHeader := Min(totalBytesToRead, FHeaderStream.Size - curPos);
+    chunkSize := Min(totalToRead, FHeaderStream.Size - curPos);
     FHeaderStream.Position := curPos;
-    FHeaderStream.ReadBuffer(bufPtr^, bytesFromHeader);
+    FHeaderStream.ReadBuffer(bufPtr^, chunkSize);
 
-    Inc(bytesRead, bytesFromHeader);
-    Inc(curPos, bytesFromHeader);
-    Inc(bufPtr, bytesFromHeader);
+    Inc(bytesRead, chunkSize);
+    Inc(curPos, chunkSize);
+    Inc(bufPtr, chunkSize);
   end;
 
-  // 2. \u0427\u0438\u0442\u0430\u043d\u043d\u044f \u043f\u0435\u0439\u043b\u043e\u0430\u0434\u0443
-  while (bytesRead < totalBytesToRead) and (curPos < FPayloadSize) do
+  // 2. Читання пейлоаду за картою блоків
+  if (bytesRead < totalToRead) and (curPos >= FHeaderStream.Size) and (curPos < FPayloadSize) then
   begin
-    foundIdx := -1;
-    lowIdx := 0;
-    highIdx := High(FBlockMap);
-
-    while lowIdx <= highIdx do
+    for i := 0 to High(FBlockMap) do
     begin
-      midIdx := (lowIdx + highIdx) shr 1;
-      if (curPos >= FBlockMap[midIdx].VirtualOffset) and (curPos <
-        FBlockMap[midIdx].VirtualOffset + FBlockMap[midIdx].BlockSize) then
+      if (curPos >= FBlockMap[i].VirtualOffset) and (curPos < FBlockMap[i].VirtualOffset +
+        FBlockMap[i].BlockSize) then
       begin
-        foundIdx := midIdx;
-        Break;
+        relOffset := curPos - FBlockMap[i].VirtualOffset;
+        chunkSize := Min(totalToRead - bytesRead, FBlockMap[i].BlockSize - relOffset);
+
+        FillChar(bufPtr^, chunkSize, 0);
+
+        srcStream := GetSourceStream(FBlockMap[i].SourceFileIdx);
+        fileSize := srcStream.Size;
+
+        if FBlockMap[i].FileOffset + relOffset < fileSize then
+        begin
+          bytesToReadFromFile := Min(chunkSize, fileSize - (FBlockMap[i].FileOffset + relOffset));
+          if bytesToReadFromFile > 0 then
+          begin
+            srcStream.Position := FBlockMap[i].FileOffset + relOffset;
+            srcStream.ReadBuffer(bufPtr^, bytesToReadFromFile);
+          end;
+        end;
+
+        Inc(bytesRead, chunkSize);
+        Inc(curPos, chunkSize);
+        Inc(bufPtr, chunkSize);
+
+        if bytesRead >= totalToRead then Break;
       end;
-
-      if curPos < FBlockMap[midIdx].VirtualOffset then
-        highIdx := midIdx - 1
-      else
-        lowIdx := midIdx + 1;
     end;
-
-    if foundIdx = -1 then Break;
-
-    bytesToCopy := Min(totalBytesToRead - bytesRead, (FBlockMap[foundIdx].VirtualOffset +
-      FBlockMap[foundIdx].BlockSize) - curPos);
-
-    relOffsetInBlock := curPos - FBlockMap[foundIdx].VirtualOffset;
-    srcStream := GetSourceStream(FBlockMap[foundIdx].SourceFileIdx);
-    fileSize := srcStream.Size;
-
-    FillChar(bufPtr^, bytesToCopy, 0);
-
-    if FBlockMap[foundIdx].FileOffset + relOffsetInBlock < fileSize then
-    begin
-      bytesToReadFromFile := Min(bytesToCopy, fileSize - (FBlockMap[foundIdx].FileOffset +
-        relOffsetInBlock));
-      srcStream.Position := FBlockMap[foundIdx].FileOffset + relOffsetInBlock;
-      if bytesToReadFromFile > 0 then
-        srcStream.ReadBuffer(bufPtr^, bytesToReadFromFile);
-    end;
-
-    if Assigned(FCb) then
-      FCb(FFiles[FBlockMap[foundIdx].SourceFileIdx],
-        FBlockMap[foundIdx].FileOffset div FBlockSize,
-        (fileSize + FBlockSize - 1) div FBlockSize);
-
-    Inc(bytesRead, bytesToCopy);
-    Inc(curPos, bytesToCopy);
-    Inc(bufPtr, bytesToCopy);
   end;
 
-  // 3. \u0427\u0438\u0442\u0430\u043d\u043d\u044f \u0441\u0438\u0433\u043d\u0430\u0442\u0443\u0440\u0438 (\u044f\u043a\u0449\u043e \u0430\u043a\u0442\u0438\u0432\u043e\u0432\u0430\u043d\u043e)
-  if FSign and (bytesRead < totalBytesToRead) and (curPos >= FPayloadSize) and (curPos < FTotalSize) then
+  // Оновлення накопичувального CRC32 лише для байтів пейлоаду (хедера + файлів)
+  if FSign and (bytesRead > 0) and (FPosition < FPayloadSize) then
   begin
-    sigOffset := curPos - FPayloadSize;
-    bytesFromSig := Min(totalBytesToRead - bytesRead, SizeOf(FSignatureBuffer) - sigOffset);
-    if bytesFromSig > 0 then
+    if FPosition + bytesRead <= FPayloadSize then
+      payloadBytesRead := bytesRead
+    else
+      payloadBytesRead := FPayloadSize - FPosition;
+
+    if payloadBytesRead > 0 then
+      FCrcVal := crc32(FCrcVal, @Buffer, payloadBytesRead);
+  end;
+
+  // 3. Читання сигнатури та її фінальний розрахунок
+  if FSign and (curPos >= FPayloadSize) and (curPos < FTotalSize) then
+  begin
+    // Записуємо CRC в кінець сигнатури перед першою вичіткою будь-якого байта сигнатури
+    if not FSigFinalized then
     begin
-      Move(FSignatureBuffer[sigOffset], bufPtr^, bytesFromSig);
-      Inc(bytesRead, bytesFromSig);
-      Inc(curPos, bytesFromSig);
+      FCrcVal := crc32(FCrcVal, @FSignatureBuffer[0], SizeOf(FSignatureBuffer) - 4);
+      Move(FCrcVal, FSignatureBuffer[SizeOf(FSignatureBuffer) - 4], SizeOf(dword));
+      FSigFinalized := True;
+    end;
+
+    if bytesRead < totalToRead then
+    begin
+      sigOffset := curPos - FPayloadSize;
+      chunkSize := Min(totalToRead - bytesRead, SizeOf(FSignatureBuffer) - sigOffset);
+      if chunkSize > 0 then
+      begin
+        Move(FSignatureBuffer[sigOffset], bufPtr^, chunkSize);
+        Inc(bytesRead, chunkSize);
+        Inc(curPos, chunkSize);
+      end;
     end;
   end;
 
@@ -854,6 +842,7 @@ function TMFCQPackStream.Write(const Buffer; Count: longint): longint;
 begin
   raise EStreamError.Create('TMFCQPackStream is read-only');
 end;
+
 
 { TMFCQChunkStream }
 
@@ -1078,10 +1067,75 @@ procedure _packMFCQ(outFile: TStream; const iFiles: TStringList; cb: TProgressCa
   ver: integer = 2; fast: boolean = False; sign: boolean = False);
 var
   packStream: TMFCQPackStream;
+  buffer: array[0..$FFFF] of byte; // Буфер 64 КБ ($10000)
+  bytesRead, i, activeFileIdx, lastFileIdx: integer;
+  curVirtPos, totalBlocks, currentBlock: int64;
+  fn: string;
 begin
   packStream := TMFCQPackStream.Create(iFiles, cb, ver, fast, sign);
   try
-    outFile.CopyFrom(packStream, packStream.Size);
+    lastFileIdx := -1;
+
+    // Ініціалізація прогресу для першого файлу
+    if Assigned(cb) and (Length(packStream.Files) > 0) then
+    begin
+      fn := packStream.Files[0];
+      totalBlocks := Size2Blocks(fn, packStream.BlockSize);
+      cb(fn, -1, totalBlocks);
+      lastFileIdx := 0;
+    end;
+
+    repeat
+      curVirtPos := packStream.Position;
+      bytesRead := packStream.Read(buffer[0], SizeOf(buffer));
+
+      if bytesRead > 0 then
+      begin
+        outFile.WriteBuffer(buffer[0], bytesRead);
+
+        // Відображення прогресу
+        if Assigned(cb) and (Length(packStream.BlockMap) > 0) then
+        begin
+          activeFileIdx := -1;
+          for i := High(packStream.BlockMap) downto 0 do
+          begin
+            if curVirtPos >= packStream.BlockMap[i].VirtualOffset then
+            begin
+              activeFileIdx := packStream.BlockMap[i].SourceFileIdx;
+              currentBlock := (packStream.BlockMap[i].FileOffset div packStream.BlockSize) + 1;
+              Break;
+            end;
+          end;
+
+          if (activeFileIdx >= 0) and (activeFileIdx < Length(packStream.Files)) then
+          begin
+            fn := packStream.Files[activeFileIdx];
+            totalBlocks := Size2Blocks(fn, packStream.BlockSize);
+
+            if activeFileIdx <> lastFileIdx then
+            begin
+              if lastFileIdx >= 0 then
+                cb(packStream.Files[lastFileIdx], Size2Blocks(packStream.Files[lastFileIdx],
+                  packStream.BlockSize), Size2Blocks(packStream.Files[lastFileIdx], packStream.BlockSize));
+
+              cb(fn, -1, totalBlocks);
+              lastFileIdx := activeFileIdx;
+            end;
+
+            cb(fn, currentBlock, totalBlocks);
+          end;
+        end;
+      end;
+    until bytesRead = 0;
+
+    // Фінальний сигнал завершення для останнього файла
+    if Assigned(cb) and (lastFileIdx >= 0) and (lastFileIdx < Length(packStream.Files)) then
+    begin
+      fn := packStream.Files[lastFileIdx];
+      totalBlocks := Size2Blocks(fn, packStream.BlockSize);
+      cb(fn, totalBlocks, totalBlocks);
+    end;
+
   finally
     packStream.Free;
   end;

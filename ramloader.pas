@@ -960,7 +960,7 @@ begin
       try
         iFiles.Add(fName);
         // TMFCQPackStream формує заголовки у пам'яті, а дані читає з диска при Read
-        fPayload := TMFCQPackStream.Create(iFiles, nil, ver, ver = 2, true);
+        fPayload := TMFCQPackStream.Create(iFiles, nil, ver, ver = 2, True);
       finally
         iFiles.Free;
       end;
@@ -968,7 +968,10 @@ begin
     else
       fPayload.Position := 0;
 
-    s := fPayload.Size;
+    if fPayload is TMFCQPackStream then
+      s := TMFCQPackStream(fPayload).PayloadSize
+    else
+      s := fPayload.Size;
 
     // Перевірка наявності сигнатури в кінці контейнера
     if isMFCQ and (s > 560) then
@@ -1043,7 +1046,14 @@ begin
     TConsole.WriteLn('Send signature');
     SetLength(Buff, 560 + 2);
     PWord(@Buff[0])^ := word(560);
-    Move(dummy_signature[0], Buff[2], 560);
+    if (fPayload is TMFCQPackStream) and (TMFCQPackStream(fPayload).IsSigned) then
+    begin
+      TMFCQPackStream(fPayload).Read(Buff[2], 560);
+    end
+    else
+    begin
+      Move(dummy_signature[0], Buff[2], 560);
+    end;
 
     if not fBBLdr.SendSignature(Buff) then
       TConsole.WriteLn('Signature send error', ccRed);
