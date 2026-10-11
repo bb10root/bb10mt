@@ -113,6 +113,8 @@ begin
     Exit(-1);
   end;
 
+  imagePath := ExpandFileName(imagePath);
+
   if not FileExists(imagePath) then
   begin
     TConsole.WriteLn('❌ Image file does not exist: ' + imagePath);

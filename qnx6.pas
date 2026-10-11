@@ -64,6 +64,10 @@ type
     procedure CreateImage(blocks, blockSize, inodes: integer);
     function CreateObject(const aName: pchar; mode: word; idx: dword = 0): integer;
     function CreateFile(const aName: pchar; aMode: word): integer;
+
+    function FileExists(const aName: pchar): boolean; overload;
+    function FileExists(const aPath: string): boolean; overload;
+
     function MkDir(const aName: pchar; mode: word): integer;
     function symlink(const aLinksToName, aName: pchar): integer;
     function link(const aLinksToName, aName: pchar): integer;
@@ -820,6 +824,27 @@ begin
     SetInode(targetIdx, inode);
     Result := 0;
   end;
+end;
+
+function TQNX6Fs.FileExists(const aName: pchar): boolean;
+var
+  idx: DWord;
+  inode: TQNX6_DInode;
+begin
+  Result := False;
+  if (aName = nil) or (aName^ = #0) then Exit;
+
+  idx := GetInodeByPath(aName);
+  if idx = 0 then Exit;
+
+  inode := GetInode(idx);
+  // Перевіряємо, чи це звичайний файл (можна адаптувати, якщо потрібні також каталоги)
+  Result := FpS_ISREG(inode.mode);
+end;
+
+function TQNX6Fs.FileExists(const aPath: string): boolean;
+begin
+  Result := FileExists(PChar(aPath));
 end;
 
 function TQNX6Fs.MkDir(const aName: pchar; mode: word): integer;

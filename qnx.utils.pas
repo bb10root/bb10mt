@@ -330,8 +330,9 @@ begin
   try
     try
       Stream.LoadFromFile(ASrcFilePath);
-      if FS.CreateFile(PChar(TargetQNXPath), &666) < 0 then
-        Exit;
+      if not FS.FileExists(TargetQNXPath) then
+        if FS.CreateFile(PChar(TargetQNXPath), &666) < 0 then
+          Exit;
 
       Result := qnx6_writeFile(FS, TargetQNXPath, Stream);
     except
