@@ -40,10 +40,11 @@ type
     fCacheInodes: TPathTrieCache;
     fCacheIDirs: TCachedIDirs;
 
-    function GetDirectWrite: boolean;
-    procedure SetDirectWrite(AValue: boolean);
-    function GetBlockSize: dword;
+    function GetDirectWrite: boolean; inline;
+    procedure SetDirectWrite(AValue: boolean); inline;
+    function GetBlockSize: dword; inline;
     function FindOrAddDirEntry(var RDI: TQNX6_ARawDirEntry): integer;
+    function NameEquals(var entry: TQNX6_RawDirEntry; const TargetName: string): boolean;
   public
     constructor Create(Stream: TStream);
     destructor Destroy; override;
@@ -439,18 +440,42 @@ begin
   end;
 end;
 
+function TQNX6Fs.NameEquals(var entry: TQNX6_RawDirEntry; const TargetName: string): boolean;
+var
+  c: integer;
+  bName: utf8string;
+begin
+  c := Length(TargetName);
+  case entry.len of
+    1..QNX6FS_DIR_SHORT_LEN:
+    begin
+      if entry.len <> c then Exit(False);
+      // Пряме порівняння пам'яті без створення нових рядків
+      Result := CompareMem(@entry.Data[0], @TargetName[1], c);
+    end;
+
+    QNX6FS_DIR_LONGNAME, QNX6FS_DIR_CRYPTNAME:
+    begin
+      // Для довгих/зашифрованих імен викликаємо повний метод
+      bName := RawDirEntryGetName(entry);
+      Result := (bName = TargetName);
+    end;
+
+    else
+      Result := False;
+  end;
+end;
+
 function TQNX6Fs.NameIdx(Name: utf8string; var RDI: TQNX6_ARawDirEntry): integer;
 var
   i: integer;
-  bName: utf8string;
 begin
   Result := -1;
   for i := 0 to High(RDI) do
   begin
     if (RDI[i].inode <> 0) and (RDI[i].inode <> $FFFFFFFF) then
     begin
-      bName := RawDirEntryGetName(RDI[i]);
-      if bName = Name then
+      if NameEquals(RDI[i], Name) then
         Exit(i);
     end;
   end;
