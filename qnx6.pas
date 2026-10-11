@@ -45,6 +45,7 @@ type
     function GetBlockSize: dword; inline;
     function FindOrAddDirEntry(var RDI: TQNX6_ARawDirEntry): integer;
     function NameEquals(var entry: TQNX6_RawDirEntry; const TargetName: string): boolean;
+    function NameEqualsEx(var entry: TQNX6_RawDirEntry; pName: pchar; aLen: integer): boolean;
   public
     constructor Create(Stream: TStream);
     destructor Destroy; override;
@@ -466,6 +467,31 @@ begin
   end;
 end;
 
+function TQNX6Fs.NameEqualsEx(var entry: TQNX6_RawDirEntry; pName: pchar; aLen: integer): boolean;
+var
+  bName: utf8string;
+begin
+  case entry.len of
+    1..QNX6FS_DIR_SHORT_LEN:
+    begin
+      if entry.len <> aLen then Exit(False);
+      // Швидке побітове порівняння коротких імен без виділення пам'яті
+      Result := CompareMem(@entry.Data[0], pName, aLen);
+    end;
+
+    QNX6FS_DIR_LONGNAME, QNX6FS_DIR_CRYPTNAME:
+    begin
+      // Для довгих імен викликаємо повний розбір
+      bName := RawDirEntryGetName(entry);
+      if Length(bName) <> aLen then Exit(False);
+      Result := CompareMem(@bName[1], pName, aLen);
+    end;
+
+    else
+      Result := False;
+  end;
+end;
+
 function TQNX6Fs.NameIdx(Name: utf8string; var RDI: TQNX6_ARawDirEntry): integer;
 var
   i: integer;
@@ -487,7 +513,6 @@ var
   len, pStart, pEnd, segLen: integer;
   idx, foundInode: DWord;
   DE: TQNX6_ARawDirEntry;
-  bName: utf8string;
   i, k, w: integer;
   found: boolean;
   ch, prevCh: char;
@@ -496,7 +521,7 @@ begin
   if (aName = nil) or (aName^ = #0) then Exit;
   pathPart := string(aName);
 
-  // Нормалізація: згортаємо дубльовані '/'
+  // Нормалізація: згортаємо дубльовані '/' за 1 прохід
   w := 0;
   prevCh := #0;
   SetLength(segment, Length(pathPart));
@@ -542,7 +567,6 @@ begin
     i := pStart;
     while (i <= pEnd) and (pathPart[i] <> '/') do Inc(i);
     segLen := i - pStart;
-    segment := Copy(pathPart, pStart, segLen);
 
     found := False;
     k := ReadDirectory(idx, DE);
@@ -550,15 +574,18 @@ begin
 
     for i := 0 to Pred(k) do
     begin
-      bName := RawDirEntryGetName(DE[i]);
-      if (bName = '.') or (bName = '..') then Continue;
+      // Пропускаємо службові елементи '.' та '..' без алокацій
+      if (DE[i].len = 1) and (DE[i].Data[0] = 46) then Continue; // '.'
+      if (DE[i].len = 2) and (DE[i].Data[0] = 46) and (DE[i].Data[1] = 46) then Continue; // '..'
 
-      if SameStr(segment, bName) then
+      // Використовуємо швидке порівняння за пойнтером на підрядок без алокацій
+      if NameEqualsEx(DE[i], @pathPart[pStart], segLen) then
       begin
+        segment := Copy(pathPart, pStart, segLen);
         if fullPath = '/' then
-          fullPath := '/' + bName
+          fullPath := '/' + segment
         else
-          fullPath := fullPath + '/' + bName;
+          fullPath := fullPath + '/' + segment;
 
         idx := DE[i].inode;
         fCacheInodes.AddOrSetValue(fullPath, idx);
@@ -573,6 +600,7 @@ begin
 
   Result := idx;
 end;
+
 
 function TQNX6Fs.ReadDirectory(Path: string; var RDI: TQNX6_ARawDirEntry): integer;
 var
