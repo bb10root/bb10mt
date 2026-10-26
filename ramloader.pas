@@ -308,6 +308,11 @@ begin
     Exit(False);
   end;
 
+  if fClient.Device.ID = $8001 then
+  begin
+    fClient.RebootAndReconnect([1]);
+  end;
+
   try
     fClient.Device.Ping0;
 
