@@ -127,28 +127,36 @@ begin
 end;
 
 function TBBTransport.GetEndpoint(Channel: word; IsIn: boolean): byte;
-var
-  idx: integer;
 begin
-  if fEPCount = 0 then
+  // 1. Примусовий хардкод під конкретні Product ID пристрою
+  if (fID = 1) or (fID = $8001) then
   begin
-    if IsIn then Exit($81) else Exit($01);
+    if IsIn then Exit($82)
+    else
+      Exit($02);
+  end
+  else if fID = $8017 then
+  begin
+    if IsIn then Exit($87)
+    else
+      Exit($07);
   end;
 
-  if (fEPCount > 1) and (Channel >= 2) then
-    idx := 1
-  else
-    idx := 0;
-
-  if IsIn then
-    Result := fEndpoints[idx].InAddr
-  else
-    Result := fEndpoints[idx].OutAddr;
-
-  if Result = 0 then
+  // 2. Якщо fID інший, беремо першу знайдену пару з масиву fEndpoints
+  if fEPCount > 0 then
   begin
-    if IsIn then Result := $81 else Result := $01;
+    if IsIn then
+      Result := fEndpoints[0].InAddr
+    else
+      Result := fEndpoints[0].OutAddr;
+
+    if Result <> 0 then Exit;
   end;
+
+  // 3. Загальний фоллбек
+  if IsIn then Result := $81
+  else
+    Result := $01;
 end;
 
 function TBBTransport.TryOpen(const ProductIDs: array of word; TimeoutMS: integer = 5000): boolean;
@@ -216,7 +224,9 @@ begin
             try
               for j := 0 to config^.bNumInterfaces - 1 do
               begin
-                {$PUSH}{$R-}{$Q-}
+                {$PUSH}
+                {$R-}
+                {$Q-}
                 iface := config^._interface^[j];
                 {$POP}
                 if iface.num_altsetting < 1 then
@@ -236,7 +246,9 @@ begin
 
                       for k := 0 to alt.bNumEndpoints - 1 do
                       begin
-                        {$PUSH}{$R-}{$Q-}
+                        {$PUSH}
+                        {$R-}
+                        {$Q-}
                         ep := alt.endpoint^[k];
                         {$POP}
 
@@ -250,7 +262,7 @@ begin
                           for epIdx := 0 to fEPCount - 1 do
                           begin
                             if ((fEndpoints[epIdx].InAddr and $0F) = epNum) or
-                               ((fEndpoints[epIdx].OutAddr and $0F) = epNum) then
+                              ((fEndpoints[epIdx].OutAddr and $0F) = epNum) then
                               Break;
                           end;
 

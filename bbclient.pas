@@ -20,7 +20,6 @@ type
     function Connect(const ProductIDs: array of word; TimeoutMS: integer = 5000): boolean;
     procedure Disconnect;
 
-    procedure Reboot;
     // Перезавантаження з очікуванням повторного підключення
     function RebootAndReconnect(const TargetProductIDs: array of word;
       WaitDisconnectMS: integer = 3000; ReconnectTimeoutMS: integer = 10000): boolean;
@@ -64,24 +63,6 @@ begin
   fDevice.Close;
 end;
 
-procedure TBBClient.Reboot;
-begin
-  if not IsConnected then Exit;
-
-  // 1. Спочатку пробуємо відправити команду Reboot через Loader (Channel 2), якщо вона там присутня
-  try
-    if not fLoader.Reboot then
-      fDevice.Reboot; // Фолбек на команду Channel 0
-  except
-    // Ігноруємо помилки USB write/read, оскільки пристрій міг відключитися миттєво
-  end;
-
-  // 2. Закриваємо поточну сесію USB
-  Disconnect;
-
-end;
-
-
 function TBBClient.RebootAndReconnect(const TargetProductIDs: array of word;
   WaitDisconnectMS: integer = 3000; ReconnectTimeoutMS: integer = 10000): boolean;
 var
@@ -93,10 +74,10 @@ begin
 
   currentID := fDevice.ID;
 
-  // 1. Спочатку пробуємо відправити команду Reboot через Loader (Channel 2), якщо вона там присутня
   try
-    fLoader.Reboot;
-    fDevice.Reboot; // Фолбек на команду Channel 0
+    if (currentID = $8001) then
+      fLoader.Reboot;
+    fDevice.Reboot;
   except
     // Ігноруємо помилки USB write/read, оскільки пристрій міг відключитися миттєво
   end;

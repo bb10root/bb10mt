@@ -302,15 +302,15 @@ var
 begin
   Result := False;
 
-  if not fClient.Connect([1, $8001], 10000) then
+  if not fClient.Connect([], 10000) then
   begin
     TConsole.WriteLn('Unable to detect device', ccRed);
     Exit(False);
   end;
 
-  if fClient.Device.ID = $8001 then
+  if fClient.Device.ID <> 1 then
   begin
-    fClient.RebootAndReconnect([1]);
+    fClient.RebootAndReconnect([1], 60000);
   end;
 
   try
