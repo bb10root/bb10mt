@@ -33,6 +33,8 @@ type
 
 implementation
 
+uses RIMSignatureParser;
+
 constructor TBBLoaderStore.Create(const LdrDir: string);
 var
   BaseDir: string;
@@ -61,31 +63,41 @@ end;
 
 function TBBLoaderStore.IsValidSignature(const Data: TBytes): boolean;
 var
+  Sections: TQNXSectionArray;
   i: integer;
 begin
   Result := False;
-  if Length(Data) < $90 then Exit;
+  Sections := GetSignatureSections(Data);
 
-  for i := 1 to $80 do
-    if Data[Length(Data) - (16 + i)] <> $FF then
+  if Length(Sections) = 0 then Exit;
+
+  // Перевіряємо, чи хоча б одна секція містить дійсний (не порожній) пейлоад підпису
+  for i := 0 to High(Sections) do
+  begin
+    if Length(Sections[i].Payload) > 0 then
     begin
       Result := True;
       Break;
     end;
+  end;
 end;
 
 function TBBLoaderStore.IsSignedLoader(const Data: TBytes): boolean;
 var
-  x: longword;
+  Sections: TQNXSectionArray;
 begin
   Result := False;
+
+  // Мінімальний розмір файлу для завантажувача
   if Length(Data) < 10240 then Exit;
-  if (Length(Data) < 8) or (PDWord(@Data[4])^ <> $D7D32D1F) then Exit;
 
-  x := Length(Data) - 8;
-  if (x >= Length(Data)) or (PDWord(@Data[x])^ <> $D7C82D1F) then Exit;
+  // Отримуємо розпарсений масив секцій підписів з хвоста
+  Sections := GetSignatureSections(Data);
 
-  Result := IsValidSignature(Data);
+  // Якщо підписи відсутні або розбір повернув порожній масив — завантажувач не підписаний
+  if Length(Sections) = 0 then Exit;
+
+  Result := True;
 end;
 
 function TBBLoaderStore.IsValidLoader(const Data: TBytes; ModelID: cardinal): boolean;

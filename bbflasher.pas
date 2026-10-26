@@ -14,122 +14,186 @@ type
     fDummySignature: array[0..559] of byte;
   public
     constructor Create(aLoader: TBBLoader);
+    function FlashStream(aStream: TStream; ModelID: cardinal; AutoFreeStream: boolean = False): integer;
     function FlashFile(const fName: string; ModelID: cardinal; ver: byte = 2): integer;
   end;
 
 implementation
 
+uses uAutoloader, RIMSignatureParser;
+
 constructor TBBFlasher.Create(aLoader: TBBLoader);
 begin
   inherited Create;
   fLoader := aLoader;
-  FillChar(fDummySignature[0], SizeOf(fDummySignature), 0);
+  Move(signature_data[0], fDummySignature[0], SizeOf(fDummySignature));
 end;
 
 function TBBFlasher.FlashFile(const fName: string; ModelID: cardinal; ver: byte = 2): integer;
+const
+  MAGIC_MFCQ = $7163666D; // Magic 'mfcq'
 var
-  fPayload: TStream;
-  Buff: TBytes;
-  s: int64;
-  cb, bs, TotalBlocks, MagicVal: longword;
-  progress: IProgressIndicator;
+  FileStream: TFileStream;
+  aStream: TStream;
+  ext: string;
+  MagicVal: longword;
+  isMFCQ, isEXE: boolean;
+  AutoLoader: TAutoloaderReader;
+  i: integer;
   iFiles: TStringList;
-  isMFCQ: boolean;
 begin
-  if not Assigned(fLoader) then
-  begin
-    TConsole.WriteLn('Loader interface not initialized', ccRed);
-    Exit(-2);
-  end;
-
   if not FileExists(fName) then
   begin
     TConsole.WriteLn('File not found: ' + fName, ccRed);
     Exit(-1);
   end;
 
-  fPayload := nil;
+  FileStream := TFileStream.Create(fName, fmOpenRead or fmShareDenyNone);
   try
-    fPayload := TFileStream.Create(fName, fmOpenRead or fmShareDenyNone);
     isMFCQ := False;
+    isEXE := False;
 
-    if fPayload.Size >= 4 then
+    if (FileStream.Size >= SizeOf(MagicVal)) and (FileStream.Read(MagicVal, SizeOf(MagicVal)) =
+      SizeOf(MagicVal)) then
     begin
-      if fPayload.Read(MagicVal, SizeOf(MagicVal)) = 4 then
-        isMFCQ := (MagicVal = $7163666D); // Magic 'mfcq'
+      isMFCQ := (MagicVal = MAGIC_MFCQ);
+      isEXE := ((MagicVal and $FFFF) = $5A4D) or ((MagicVal and $FFFF) = $4D5A);
     end;
 
-    if not isMFCQ then
+    FileStream.Position := 0;
+
+    if isEXE then
     begin
-      FreeAndNil(fPayload);
+      AutoLoader := TAutoloaderReader.Create(fName);
+      try
+        Result := 0;
+        for i := 0 to AutoLoader.FileCount - 1 do
+        begin
+          aStream := AutoLoader.OpenFileStream(i);
+          Result := FlashStream(aStream, ModelID, True);
+          if Result <> 0 then Break; // Перериваємо процес у разі помилки
+        end;
+      finally
+        AutoLoader.Free;
+      end;
+      Exit;
+    end
+    else if isMFCQ then
+    begin
+      aStream := FileStream;
+    end
+    else
+    begin
       TConsole.WriteLn('Making QCFM stream');
+      ext := ExtractFileExt(fName);
+      if (ext <> '') and (ext[1] = '.') then
+        Delete(ext, 1, 1);
 
       iFiles := TStringList.Create;
       try
         iFiles.Add(fName);
-        fPayload := TMFCQPackStream.Create(iFiles, nil, ver, ver = 2, True);
+        // Запаковуємо звичайний файл у TMFCQPackStream
+        aStream := TMFCQPackStream.Create(iFiles, nil, ver, ver = 2, True);
       finally
-        iFiles.Free;
+        iFiles.Free; // Звільняємо список після передачі у конструктор
       end;
-    end
-    else
-      fPayload.Position := 0;
-
-    if fPayload is TMFCQPackStream then
-      s := TMFCQPackStream(fPayload).PayloadSize
-    else
-      s := fPayload.Size;
-
-    if isMFCQ and (s > 560) then
-    begin
-      fPayload.Position := s - 560;
-      if fPayload.Read(MagicVal, SizeOf(MagicVal)) = 4 then
-      begin
-        if MagicVal = $48584e51 then // Magic 'QNXH'
-        begin
-          fPayload.Position := s - 560;
-          if fPayload.Read(fDummySignature[0], 560) <> 560 then
-            TConsole.WriteLn('Warning: Could not read complete signature', ccYellow);
-          s := s - 560;
-        end;
-      end;
+      // Якщо це вже MFCQ, використовуємо оригінальний FileStream
     end;
 
-    fPayload.Position := 0;
+    Result := FlashStream(aStream, ModelID, aStream <> FileStream);
+  finally
+    FileStream.Free;
+  end;
+end;
 
-    if (ModelID and $FFFF) = $2c0a then
+function TBBFlasher.FlashStream(aStream: TStream; ModelID: cardinal; AutoFreeStream: boolean): integer;
+const
+  HEADER_SIZE = 8;
+var
+  Buff: TBytes;
+  s, sigSize: int64;
+  cb, bs, TotalBlocks: longword;
+  progress: IProgressIndicator;
+  Success: boolean;
+  EffectiveBlockSize: longword;
+  StartPos: int64;
+  SendSize: integer;
+begin
+  if not Assigned(fLoader) then
+  begin
+    TConsole.WriteLn('Loader interface not initialized', ccRed);
+    if AutoFreeStream then FreeAndNil(aStream);
+    Exit(-2);
+  end;
+
+  if not Assigned(aStream) then
+  begin
+    TConsole.WriteLn('Input stream is nil', ccRed);
+    Exit(-1);
+  end;
+
+  sigSize := SizeOf(fDummySignature);
+
+  try
+    StartPos := aStream.Position;
+
+    if aStream is TMFCQPackStream then
+      s := TMFCQPackStream(aStream).PayloadSize
+    else
+      s := aStream.Size - StartPos;
+
+    if s > SizeOf(fDummySignature) then
+    begin
+      aStream.Position := StartPos;
+      sigSize := GetSignatureBlockSize(aStream);
+      if (sigSize <= 0) or (sigSize >= SizeOf(fDummySignature)) then
+        sigSize := SizeOf(fDummySignature);
+      s := s - sigSize;
+    end;
+
+    aStream.Position := StartPos;
+
+    if (ModelID and $FFFF) = $2C0A then
       fLoader.PreFlash($40)
     else
       fLoader.PreFlash($15);
 
-    SetLength(Buff, MAX_FLASH_BLOCK);
-    TotalBlocks := (s + (MAX_FLASH_BLOCK - 8) - 1) div (MAX_FLASH_BLOCK - 8);
+    EffectiveBlockSize := MAX_FLASH_BLOCK - HEADER_SIZE;
+    TotalBlocks := (s + EffectiveBlockSize - 1) div EffectiveBlockSize;
     cb := 0;
+
+    // Виділяємо буфер буфера один раз під максимальний розмір
+    SetLength(Buff, MAX_FLASH_BLOCK);
 
     progress := CreateProgressBar(TotalBlocks, 40);
     if Assigned(progress) then progress.Start;
 
+    Success := True;
     try
-      while fPayload.Position < s do
+      while (aStream.Position - StartPos) < s do
       begin
-        bs := Min(s - fPayload.Position, MAX_FLASH_BLOCK - 8);
+        bs := Min(s - (aStream.Position - StartPos), EffectiveBlockSize);
 
         PDWord(@Buff[0])^ := cb;
         PDWord(@Buff[4])^ := bs;
 
-        if fPayload.Read(Buff[8], bs) <> integer(bs) then
+        if aStream.Read(Buff[HEADER_SIZE], bs) <> integer(bs) then
         begin
-          TConsole.WriteLn('Error reading file data', ccRed);
+          TConsole.WriteLn('Error reading payload stream', ccRed);
+          Success := False;
           Break;
         end;
 
-        if (bs + 8) <> MAX_FLASH_BLOCK then
-          SetLength(Buff, bs + 8);
+        SendSize := bs + HEADER_SIZE;
+        if SendSize <> MAX_FLASH_BLOCK then
+          SetLength(Buff, SendSize);
+        // Скорочуємо буфер тільки для останнього блоку
 
         if not fLoader.SendBlock(Buff) then
         begin
           TConsole.WriteLn('Flash error', ccRed);
-          Exit(-3);
+          Success := False;
+          Break;
         end;
 
         Inc(cb);
@@ -139,24 +203,25 @@ begin
       if Assigned(progress) then progress.Stop;
     end;
 
+    if not Success then
+      Exit(-3);
+
     TConsole.WriteLn('Send signature');
-    SetLength(Buff, 560 + 2);
-    PWord(@Buff[0])^ := word(560);
-    if (fPayload is TMFCQPackStream) and (TMFCQPackStream(fPayload).IsSigned) then
-    begin
-      TMFCQPackStream(fPayload).Read(Buff[2], 560);
-    end
+    SetLength(Buff, sigSize + 2);
+    PWord(@Buff[0])^ := word(sigSize);
+
+    if (aStream is TMFCQPackStream) and TMFCQPackStream(aStream).IsSigned then
+      TMFCQPackStream(aStream).Read(Buff[2], sigSize)
     else
-    begin
-      Move(fDummySignature[0], Buff[2], 560);
-    end;
+      aStream.Read(Buff[2], sigSize);
 
     if not fLoader.SendSignature(Buff) then
       TConsole.WriteLn('Signature send error', ccRed);
 
     Sleep(1000);
   finally
-    FreeAndNil(fPayload);
+    if AutoFreeStream then
+      FreeAndNil(aStream);
   end;
 
   fLoader.Complete;

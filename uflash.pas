@@ -429,7 +429,7 @@ begin
     while Attempts < MAX_CONNECTION_ATTEMPTS do
     begin
       try
-        if RAM.ConnectToBB(delay) then
+        if RAM.ConnectToBB(delay, True) then
         begin
           Result := True;
           Break;
@@ -728,7 +728,7 @@ begin
     while Attempts < MAX_CONNECTION_ATTEMPTS do
     begin
       try
-        if RAM.ConnectToBB(-1) then
+        if RAM.ConnectToBB(-1, True) then
         begin
           Result := 0;
           Break;

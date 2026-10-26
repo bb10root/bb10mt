@@ -1,6 +1,6 @@
 unit qcfm;
 
-{$mode ObjFPC}{$H+}
+{$mode ObjFPC}{$H+}{$O+}
 
 interface
 
@@ -109,6 +109,7 @@ type
     FOwnsSource: boolean;
     FVersion: TMFCQVersion;
     FBlockMap: array of TBlockMapItem;
+    FLastBlockIdx: integer;
     procedure BuildBlockMap;
   public
     constructor Create(ASourceStream: TStream; const AChunk: TMFCQChunk; AVersion: TMFCQVersion;
@@ -159,7 +160,6 @@ type
   end;
 
   AVirtualBlockMap = array of TVirtualBlockMap;
-
   TFileStreamMap = specialize TObjectDictionary<integer, TFileStream>;
 
   TMFCQPackStream = class(TStream)
@@ -177,8 +177,10 @@ type
     FSigFinalized: boolean;
     FCrcVal: dword;
     FSignatureBuffer: array[0..559] of byte;
+    FCurrentBlockMapIdx: integer;
     procedure BuildHeadersAndMap(const iFiles: TStringList; ver: integer; fast: boolean);
     function GetSourceStream(FileIdx: integer): TFileStream;
+    function FindBlockIndexAtPos(Pos: int64): integer;
   protected
     function GetSize: int64; override;
   public
@@ -196,6 +198,7 @@ type
     property PayloadSize: int64 read FPayloadSize;
     property BlockSize: integer read FBlockSize;
   end;
+
 
 function AnalyzeMFCQChunks(inFile: TStream): TMFCQChunkArrays;
 function AnalyzeMFCQChunks(const FileName: string): TMFCQChunkArrays;
@@ -345,8 +348,7 @@ var
 begin
   fs := FileSize(FileName);
   if fs <= 0 then Exit(0);
-  Result := fs div bs;
-  if (fs mod bs) <> 0 then Inc(Result);
+  Result := (fs + bs - 1) div bs;
 end;
 
 function AnalyzeFileBlocks(const FileName: string; BlockSize: integer = 4096): TBlockRangeArray;
@@ -355,7 +357,7 @@ var
   Buf: TBytes;
   BlockIndex, RangeStart: int64;
   Count, Capacity, ResLen: integer;
-  InRange: boolean;
+  InRange, isFF: boolean;
   BytesRead: integer;
 
   procedure AddRange(StartIdx: int64; Cnt: integer);
@@ -387,10 +389,8 @@ begin
       BytesRead := F.Read(Buf[0], BlockSize);
       if BytesRead > 0 then
       begin
-        if BytesRead < BlockSize then
-          SetLength(Buf, BytesRead);
-
-        if not IsFullFFBlock_Branchless(Buf, High(Buf)) then
+        isFF := IsFullFFBlock_Branchless(Buf, BytesRead - 1);
+        if not isFF then
         begin
           if not InRange then
           begin
@@ -401,20 +401,16 @@ begin
           else
             Inc(Count);
         end;
-      end;
 
-      if (BytesRead < BlockSize) or IsFullFFBlock_Branchless(Buf, High(Buf)) then
-      begin
-        if InRange then
+        if (BytesRead < BlockSize) or isFF then
         begin
-          AddRange(RangeStart, Count);
-          InRange := False;
+          if InRange then
+          begin
+            AddRange(RangeStart, Count);
+            InRange := False;
+          end;
         end;
       end;
-
-      if Length(Buf) <> BlockSize then
-        SetLength(Buf, BlockSize);
-
       Inc(BlockIndex);
     end;
 
@@ -444,6 +440,7 @@ begin
   FBlockSize := defaultBlockSize;
   FHeaderStream := TMemoryStream.Create;
   FCurrentFileStreams := TFileStreamMap.Create([doOwnsValues]);
+  FCurrentBlockMapIdx := 0;
 
   BuildHeadersAndMap(iFiles, ver, fast);
 end;
@@ -713,6 +710,26 @@ begin
   end;
 end;
 
+function TMFCQPackStream.FindBlockIndexAtPos(Pos: int64): integer;
+var
+  L, R, Mid: integer;
+begin
+  L := 0;
+  R := High(FBlockMap);
+  Result := -1;
+  while L <= R do
+  begin
+    Mid := (L + R) div 2;
+    if (Pos >= FBlockMap[Mid].VirtualOffset) and (Pos < FBlockMap[Mid].VirtualOffset +
+      FBlockMap[Mid].BlockSize) then
+      Exit(Mid);
+    if Pos < FBlockMap[Mid].VirtualOffset then
+      R := Mid - 1
+    else
+      L := Mid + 1;
+  end;
+end;
+
 function TMFCQPackStream.GetSize: int64;
 begin
   Result := FTotalSize;
@@ -737,11 +754,11 @@ var
   totalToRead, bytesRead, chunkSize: longint;
   bufPtr: pbyte;
   curPos, relOffset: int64;
-  i: integer;
   srcStream: TFileStream;
   fileSize, bytesToReadFromFile: int64;
   sigOffset: int64;
   payloadBytesRead: longint;
+  idx: integer;
 begin
   if (Count <= 0) or (FPosition >= FTotalSize) then
     Exit(0);
@@ -763,42 +780,46 @@ begin
     Inc(bufPtr, chunkSize);
   end;
 
-  // 2. Читання пейлоаду за картою блоків
+  // 2. Читання пейлоаду через оптимізований вибір блоку
   if (bytesRead < totalToRead) and (curPos >= FHeaderStream.Size) and (curPos < FPayloadSize) then
   begin
-    for i := 0 to High(FBlockMap) do
+    // Перевіряємо локальний індекс для O(1), якщо послідовне читання; інакше binary search
+    idx := FCurrentBlockMapIdx;
+    if (idx < 0) or (idx > High(FBlockMap)) or (curPos < FBlockMap[idx].VirtualOffset) or
+      (curPos >= FBlockMap[idx].VirtualOffset + FBlockMap[idx].BlockSize) then
     begin
-      if (curPos >= FBlockMap[i].VirtualOffset) and (curPos < FBlockMap[i].VirtualOffset +
-        FBlockMap[i].BlockSize) then
+      idx := FindBlockIndexAtPos(curPos);
+    end;
+
+    while (idx >= 0) and (idx <= High(FBlockMap)) and (bytesRead < totalToRead) and
+      (curPos < FPayloadSize) do
+    begin
+      FCurrentBlockMapIdx := idx;
+      relOffset := curPos - FBlockMap[idx].VirtualOffset;
+      chunkSize := Min(totalToRead - bytesRead, FBlockMap[idx].BlockSize - relOffset);
+
+      FillChar(bufPtr^, chunkSize, 0);
+      srcStream := GetSourceStream(FBlockMap[idx].SourceFileIdx);
+      fileSize := srcStream.Size;
+
+      if FBlockMap[idx].FileOffset + relOffset < fileSize then
       begin
-        relOffset := curPos - FBlockMap[i].VirtualOffset;
-        chunkSize := Min(totalToRead - bytesRead, FBlockMap[i].BlockSize - relOffset);
-
-        FillChar(bufPtr^, chunkSize, 0);
-
-        srcStream := GetSourceStream(FBlockMap[i].SourceFileIdx);
-        fileSize := srcStream.Size;
-
-        if FBlockMap[i].FileOffset + relOffset < fileSize then
+        bytesToReadFromFile := Min(chunkSize, fileSize - (FBlockMap[idx].FileOffset + relOffset));
+        if bytesToReadFromFile > 0 then
         begin
-          bytesToReadFromFile := Min(chunkSize, fileSize - (FBlockMap[i].FileOffset + relOffset));
-          if bytesToReadFromFile > 0 then
-          begin
-            srcStream.Position := FBlockMap[i].FileOffset + relOffset;
-            srcStream.ReadBuffer(bufPtr^, bytesToReadFromFile);
-          end;
+          srcStream.Position := FBlockMap[idx].FileOffset + relOffset;
+          srcStream.ReadBuffer(bufPtr^, bytesToReadFromFile);
         end;
-
-        Inc(bytesRead, chunkSize);
-        Inc(curPos, chunkSize);
-        Inc(bufPtr, chunkSize);
-
-        if bytesRead >= totalToRead then Break;
       end;
+
+      Inc(bytesRead, chunkSize);
+      Inc(curPos, chunkSize);
+      Inc(bufPtr, chunkSize);
+      Inc(idx);
     end;
   end;
 
-  // Оновлення накопичувального CRC32 лише для байтів пейлоаду (хедера + файлів)
+  // 3. CRC32 для байтів пейлоаду
   if FSign and (bytesRead > 0) and (FPosition < FPayloadSize) then
   begin
     if FPosition + bytesRead <= FPayloadSize then
@@ -810,10 +831,9 @@ begin
       FCrcVal := crc32(FCrcVal, @Buffer, payloadBytesRead);
   end;
 
-  // 3. Читання сигнатури та її фінальний розрахунок
+  // 4. Читання сигнатури
   if FSign and (curPos >= FPayloadSize) and (curPos < FTotalSize) then
   begin
-    // Записуємо CRC в кінець сигнатури перед першою вичіткою будь-якого байта сигнатури
     if not FSigFinalized then
     begin
       FCrcVal := crc32(FCrcVal, @FSignatureBuffer[0], SizeOf(FSignatureBuffer) - 4);
@@ -855,6 +875,7 @@ begin
   FVersion := AVersion;
   FOwnsSource := AOwnsSource;
   FPosition := 0;
+  FLastBlockIdx := 0;
 
   if Length(FChunk.RR) > 0 then
     FBaseOffset := FChunk.RR[0].Offset
@@ -907,7 +928,7 @@ function TMFCQChunkStream.Read(var Buffer; Count: longint): longint;
 var
   BytesToRead, BytesRead, TotalRead: longint;
   BufPtr: pbyte;
-  i: integer;
+  i, StartIdx: integer;
   VirtStart, VirtEnd, PhysPos: int64;
   ChunkOffset, ReadChunkSize: longint;
 begin
@@ -921,13 +942,18 @@ begin
 
   BufPtr := @Buffer;
 
-  for i := 0 to High(FBlockMap) do
+  StartIdx := FLastBlockIdx;
+  if (StartIdx < 0) or (StartIdx > High(FBlockMap)) or (FPosition < FBlockMap[StartIdx].VirtOffset) then
+    StartIdx := 0;
+
+  for i := StartIdx to High(FBlockMap) do
   begin
     VirtStart := FBlockMap[i].VirtOffset;
     VirtEnd := VirtStart + FChunk.BlockSize;
 
     if (FPosition < VirtEnd) and ((FPosition + BytesToRead) > VirtStart) then
     begin
+      FLastBlockIdx := i;
       if (FPosition + TotalRead) < VirtStart then
       begin
         ReadChunkSize := Min(VirtStart - (FPosition + TotalRead), BytesToRead - TotalRead);
@@ -1067,7 +1093,7 @@ procedure _packMFCQ(outFile: TStream; const iFiles: TStringList; cb: TProgressCa
   ver: integer = 2; fast: boolean = False; sign: boolean = False);
 var
   packStream: TMFCQPackStream;
-  buffer: array[0..$FFFF] of byte; // Буфер 64 КБ ($10000)
+  buffer: array[0..$FFFF] of byte;
   bytesRead, i, activeFileIdx, lastFileIdx: integer;
   curVirtPos, totalBlocks, currentBlock: int64;
   fn: string;
@@ -1076,7 +1102,6 @@ begin
   try
     lastFileIdx := -1;
 
-    // Ініціалізація прогресу для першого файлу
     if Assigned(cb) and (Length(packStream.Files) > 0) then
     begin
       fn := packStream.Files[0];
@@ -1093,7 +1118,6 @@ begin
       begin
         outFile.WriteBuffer(buffer[0], bytesRead);
 
-        // Відображення прогресу
         if Assigned(cb) and (Length(packStream.BlockMap) > 0) then
         begin
           activeFileIdx := -1;
@@ -1128,7 +1152,6 @@ begin
       end;
     until bytesRead = 0;
 
-    // Фінальний сигнал завершення для останнього файла
     if Assigned(cb) and (lastFileIdx >= 0) and (lastFileIdx < Length(packStream.Files)) then
     begin
       fn := packStream.Files[lastFileIdx];
@@ -1157,9 +1180,6 @@ begin
   end;
 end;
 
-type
-  TRR = array of TRRChunk;
-
 function AnalyzeMFCQChunks(inFile: TStream): TMFCQChunkArrays;
 var
   mhf1: TMultiHeaderFileV1;
@@ -1180,16 +1200,18 @@ var
       raise Exception.Create(msg);
   end;
 
-  procedure ReadRunRecords(n: integer; bs: integer; var RR: TRR; useV2: boolean;
+type
+  TRRChunkArray = array of TRRChunk;
+
+  procedure ReadRunRecords(n: integer; bs: integer; var RR: TRRChunkArray; useV2: boolean;
   var blkCount: integer; var payloadSize: int64);
   var
     k, realCount: integer;
-    tmpRR: array of TRRChunk;
   begin
     payloadSize := 0;
     blkCount := 0;
     realCount := 0;
-    SetLength(tmpRR, n);
+    SetLength(RR, n);
 
     for k := 0 to n - 1 do
     begin
@@ -1199,8 +1221,8 @@ var
         inFile.ReadBuffer(rr2, SizeOf(rr2));
         if rr2.magic <> 'rrcq' then
           raise Exception.Create('Invalid V2 run record magic');
-        tmpRR[realCount].Count := rr2.Count;
-        tmpRR[realCount].Offset := rr2.offset;
+        RR[realCount].Count := rr2.Count;
+        RR[realCount].Offset := rr2.offset;
         Inc(realCount);
         Inc(blkCount, rr2.Count);
         Inc(payloadSize, int64(rr2.Count) * bs);
@@ -1211,8 +1233,8 @@ var
         inFile.ReadBuffer(rr1, SizeOf(rr1));
         if (rr1.Count = 0) and (rr1.Offset = 0) then
           Continue;
-        tmpRR[realCount].Count := rr1.Count;
-        tmpRR[realCount].Offset := rr1.Offset;
+        RR[realCount].Count := rr1.Count;
+        RR[realCount].Offset := rr1.Offset;
         Inc(realCount);
         Inc(blkCount, rr1.Count);
         Inc(payloadSize, int64(rr1.Count) * bs);
@@ -1220,9 +1242,6 @@ var
     end;
 
     SetLength(RR, realCount);
-    if realCount > 0 then
-      Move(tmpRR[0], RR[0], realCount * SizeOf(TRRChunk));
-
     Inc(payloadOff, payloadSize);
   end;
 

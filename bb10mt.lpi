@@ -571,6 +571,11 @@
         <Filename Value="scripthandler.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="rimsignatureparser.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="RIMSignatureParser"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

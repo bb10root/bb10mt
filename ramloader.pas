@@ -99,7 +99,7 @@ begin
     if (loadAddr = $80100000) then
       chunkSize := 260
     else if (loadAddr = $B8000000) then
-      chunkSize := 100
+      chunkSize := 144
     else
       chunkSize := 2024;
 
