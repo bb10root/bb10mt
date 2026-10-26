@@ -39,7 +39,8 @@ function qnx6_Rm(FS: TQNX6Fs; const aName: string): boolean;
 function qnx6_readFile(FS: TQNX6Fs; const aName: string; Data: TMemoryStream): integer;
 function qnx6_writeFile(FS: TQNX6Fs; const aName: string; Data: TMemoryStream): integer;
 
-function qnx6_readDir(FS: TQNX6Fs; const aPath: string; out EntriesList: TDirEntryInfoArray): integer;
+function qnx6_readDir(FS: TQNX6Fs; const aPath: string;
+  out EntriesList: TDirEntryInfoArray): integer;
 
 function qnx6_PushFile(FS: TQNX6Fs; const ASrcFilePath, ADstQNXPath: string): integer;
 function qnx6_PushDir(FS: TQNX6Fs; const ASrcDirPath, ADstQNXPath: string;
@@ -239,7 +240,8 @@ begin
 end;
 
 
-function qnx6_readDir(FS: TQNX6Fs; const aPath: string; out EntriesList: TDirEntryInfoArray): integer;
+function qnx6_readDir(FS: TQNX6Fs; const aPath: string;
+  out EntriesList: TDirEntryInfoArray): integer;
 var
   idx, childIdx: DWord;
   inode, childInode: TQNX6_DInode;

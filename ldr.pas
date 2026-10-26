@@ -58,7 +58,8 @@ var
 begin
   // Визначаємо директорію результатів
   if OutputDir <> '' then
-    ResultDir := IncludeTrailingPathDelimiter(OutputDir) + ChangeFileExt(ExtractFileName(FileName), '')
+    ResultDir := IncludeTrailingPathDelimiter(OutputDir) +
+      ChangeFileExt(ExtractFileName(FileName), '')
   else
     ResultDir := ChangeFileExt(ExtractFileName(FileName), '');
 
@@ -105,7 +106,8 @@ begin
           Break;
         end;
 
-        if (i >= 12) and (PDWord(DataPtr + i - 8)^ = $00070000) and (PDWord(DataPtr + i - 4)^ = 0) then
+        if (i >= 12) and (PDWord(DataPtr + i - 8)^ = $00070000) and
+          (PDWord(DataPtr + i - 4)^ = 0) then
         begin
           dscPos := SearchPos + DWord(i);
           Count := PDWord(DataPtr + i - 12)^;
@@ -139,10 +141,12 @@ begin
     try
       for i := 0 to Count - 1 do
       begin
-        if (Loaders[i].loaderPtr >= SectionStart) and (Loaders[i].loaderPtr < SectionEnd) then
+        if (Loaders[i].loaderPtr >= SectionStart) and
+          (Loaders[i].loaderPtr < SectionEnd) then
         begin
           TConsole.WriteLn(Format('%.3d [%.8X] %.8X:%.8X-%.8X *',
-            [i, Loaders[i].loaderPtr, Loaders[i].deviceID, Loaders[i].RAMstart, Loaders[i].RAMend]));
+            [i, Loaders[i].loaderPtr, Loaders[i].deviceID, Loaders[i].RAMstart,
+            Loaders[i].RAMend]));
 
           // Генеруємо унікальне ім'я файлу
           j := 0;
@@ -173,7 +177,8 @@ begin
         end
         else
           TConsole.WriteLn(Format('%.3d [%.8X] %.8X:%.8X-%.8X',
-            [i, Loaders[i].loaderPtr, Loaders[i].deviceID, Loaders[i].RAMstart, Loaders[i].RAMend]));
+            [i, Loaders[i].loaderPtr, Loaders[i].deviceID, Loaders[i].RAMstart,
+            Loaders[i].RAMend]));
       end;
     finally
       DecompressedData.Free;

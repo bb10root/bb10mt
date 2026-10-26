@@ -40,13 +40,14 @@ begin
   if Stream.Read(Block.Header, HeaderSize) <> HeaderSize then Exit;
 
   // Перевірка sanity check довжини, щоб уникнути виділення надмірної пам'яті
-  if (Block.Header.DataLen > Stream.Size) or (Stream.Position + Block.Header.DataLen +
-    4 > Stream.Size) then Exit;
+  if (Block.Header.DataLen > Stream.Size) or (Stream.Position +
+    Block.Header.DataLen + 4 > Stream.Size) then Exit;
 
   SetLength(Block.Data, Block.Header.DataLen);
   if Block.Header.DataLen > 0 then
   begin
-    if Stream.Read(Block.Data[0], Block.Header.DataLen) <> integer(Block.Header.DataLen) then Exit;
+    if Stream.Read(Block.Data[0], Block.Header.DataLen) <>
+      integer(Block.Header.DataLen) then Exit;
   end;
 
   if Stream.Read(Block.Magic, 4) <> 4 then Exit;
@@ -147,7 +148,8 @@ begin
       // Перехід до наступного блоку згідно із заголовочним розміром BlockLen
       NextPos := SavedPos + Block.Header.BlockLen;
       if NextPos <= SavedPos then
-        NextPos := SavedPos + HeaderSize + Block.Header.DataLen + 4; // Резервний зсув
+        NextPos := SavedPos + HeaderSize + Block.Header.DataLen + 4;
+      // Резервний зсув
 
       Stream.Position := NextPos;
     end;

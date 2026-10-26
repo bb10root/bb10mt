@@ -110,9 +110,12 @@ type
 
 
 procedure ListPartitions(reader: TVMDKReader; var parts: TPartitionArray);
-function ExtractPartition(reader: TVMDKReader; const p: TPartitionInfo; outStream: TStream): boolean;
-function ExtractPartition(reader: TVMDKReader; const p: TPartitionInfo; const outPath: string): boolean;
-function WritePartition(reader: TVMDKReader; const p: TPartitionInfo; inStream: TStream): boolean;
+function ExtractPartition(reader: TVMDKReader; const p: TPartitionInfo;
+  outStream: TStream): boolean;
+function ExtractPartition(reader: TVMDKReader; const p: TPartitionInfo;
+  const outPath: string): boolean;
+function WritePartition(reader: TVMDKReader; const p: TPartitionInfo;
+  inStream: TStream): boolean;
 procedure PrintPartitions(const parts: TPartitionArray);
 
 implementation
@@ -129,13 +132,15 @@ var
   s: string;
 begin
   // GPT GUID fields: 4-2-2-2-6 with first three little-endian
-  s := IntToHex(PDWord(@G[0])^, 8) + '-' + IntToHex(PWord(@G[4])^, 4) + '-' +
-    IntToHex(PWord(@G[6])^, 4) + '-' + Hex2(G[8]) + Hex2(G[9]) + '-' + Hex2(G[10]) +
-    Hex2(G[11]) + Hex2(G[12]) + Hex2(G[13]) + Hex2(G[14]) + Hex2(G[15]);
+  s := IntToHex(PDWord(@G[0])^, 8) + '-' + IntToHex(PWord(@G[4])^, 4) +
+    '-' + IntToHex(PWord(@G[6])^, 4) + '-' + Hex2(G[8]) + Hex2(G[9]) +
+    '-' + Hex2(G[10]) + Hex2(G[11]) + Hex2(G[12]) + Hex2(G[13]) +
+    Hex2(G[14]) + Hex2(G[15]);
   // reverse endianness for first three parts
   Result :=
-    Copy(s, 7, 2) + Copy(s, 5, 2) + Copy(s, 3, 2) + Copy(s, 1, 2) + '-' + Copy(s, 14, 2) +
-    Copy(s, 12, 2) + '-' + Copy(s, 19, 2) + Copy(s, 17, 2) + '-' + Copy(s, 22, 4) + '-' + Copy(s, 27, 12);
+    Copy(s, 7, 2) + Copy(s, 5, 2) + Copy(s, 3, 2) + Copy(s, 1, 2) +
+    '-' + Copy(s, 14, 2) + Copy(s, 12, 2) + '-' + Copy(s, 19, 2) +
+    Copy(s, 17, 2) + '-' + Copy(s, 22, 4) + '-' + Copy(s, 27, 12);
 end;
 
 function UTF16ToUTF8Trim(const W: array of word): string;
@@ -451,8 +456,8 @@ begin
     Move(buf[$1BE + i * 16], entry, SizeOf(entry));
     if entry.PartitionType = 0 then Continue;
 
-    isExt := (entry.PartitionType = PT_EXTENDED1) or (entry.PartitionType = PT_EXTENDED2) or
-      (entry.PartitionType = PT_EXTENDED3);
+    isExt := (entry.PartitionType = PT_EXTENDED1) or
+      (entry.PartitionType = PT_EXTENDED2) or (entry.PartitionType = PT_EXTENDED3);
 
     if (not isLogical) and isExt then
     begin
@@ -470,7 +475,8 @@ begin
         partSize := QWord(entry.SizeInLBA);
 
         FillChar(p, SizeOf(p), 0);
-        p.Index := 0; // С–РЅРґРµРєСЃ РїСЂРѕСЃС‚Р°РІРёРјРѕ РїС–Р·РЅС–С€Рµ РїСЂРё РґСЂСѓС†С–
+        p.Index := 0;
+        // С–РЅРґРµРєСЃ РїСЂРѕСЃС‚Р°РІРёРјРѕ РїС–Р·РЅС–С€Рµ РїСЂРё РґСЂСѓС†С–
         p.Scheme := 'MBR-LOG';
         p.TypeHex := '0x' + IntToHex(entry.PartitionType, 2);
         p.StartLBA := partStartAbs;
@@ -528,8 +534,9 @@ begin
   if not ok then Exit;
   Move(buf[0], hdr, SizeOf(hdr));
 
-  if (hdr.Signature[0] <> 'E') or (hdr.Signature[1] <> 'F') or (hdr.Signature[2] <> 'I') or
-    (hdr.Signature[3] <> ' ') or (hdr.Signature[4] <> 'P') or (hdr.Signature[5] <> 'A') or
+  if (hdr.Signature[0] <> 'E') or (hdr.Signature[1] <> 'F') or
+    (hdr.Signature[2] <> 'I') or (hdr.Signature[3] <> ' ') or
+    (hdr.Signature[4] <> 'P') or (hdr.Signature[5] <> 'A') or
     (hdr.Signature[6] <> 'R') or (hdr.Signature[7] <> 'T') then
     Exit;
 
@@ -611,7 +618,8 @@ begin
     parts[i].Index := i + 1;
 end;
 
-function ExtractPartition(reader: TVMDKReader; const p: TPartitionInfo; outStream: TStream): boolean;
+function ExtractPartition(reader: TVMDKReader; const p: TPartitionInfo;
+  outStream: TStream): boolean;
 var
   buf: array of byte;
   total: QWord;
@@ -648,7 +656,8 @@ begin
   end;
 end;
 
-function WritePartition(reader: TVMDKReader; const p: TPartitionInfo; inStream: TStream): boolean;
+function WritePartition(reader: TVMDKReader; const p: TPartitionInfo;
+  inStream: TStream): boolean;
 var
   buf: array of byte;
   total: QWord;
@@ -687,7 +696,8 @@ begin
 end;
 
 
-function ExtractPartition(reader: TVMDKReader; const p: TPartitionInfo; const outPath: string): boolean;
+function ExtractPartition(reader: TVMDKReader; const p: TPartitionInfo;
+  const outPath: string): boolean;
 var
   outStream: TFileStream;
 begin
@@ -714,9 +724,10 @@ begin
   Writeln('#  Scheme     Type                     Start LBA       Size LBA         Size (bytes)     Name');
   for i := 0 to Length(parts) - 1 do
   begin
-    Writeln(Format('%-3d%-11s%-24s%14d  %14d  %16s  %s', [parts[i].Index, parts[i].Scheme,
-      parts[i].TypeHex, parts[i].StartLBA, parts[i].SizeLBA, FormatFloat('0',
-      parts[i].SizeLBA * SECTOR_SIZE), parts[i].NameStr]));
+    Writeln(Format('%-3d%-11s%-24s%14d  %14d  %16s  %s',
+      [parts[i].Index, parts[i].Scheme, parts[i].TypeHex, parts[i].StartLBA,
+      parts[i].SizeLBA, FormatFloat('0', parts[i].SizeLBA * SECTOR_SIZE),
+      parts[i].NameStr]));
   end;
 end;
 

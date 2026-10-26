@@ -360,8 +360,8 @@ begin
     t2 := PDWord(@Buffer[i + 4])^;
     t3 := PDWord(@Buffer[i + 8])^;
 
-    if (t2 = xver) and (t1 > 0) and (t1 <= p) and ((t3 = Cookies[0]) or
-      (t3 = Cookies[1]) or (t3 = Cookies[2])) then
+    if (t2 = xver) and (t1 > 0) and (t1 <= p) and
+      ((t3 = Cookies[0]) or (t3 = Cookies[1]) or (t3 = Cookies[2])) then
     begin
       Dec(p, t1);
       i := p - (size - Length(Buffer));
@@ -392,7 +392,8 @@ begin
   Result := Result or (cardinal(maint and $03) shl 13) or (cardinal(build and $1FFF));
 end;
 
-procedure DecodeVersion(Value: cardinal; out major, minor, maint, build: word; out isProd: boolean);
+procedure DecodeVersion(Value: cardinal; out major, minor, maint, build: word;
+  out isProd: boolean);
 var
   maintMSB, maintLSB: word;
 begin
@@ -411,7 +412,8 @@ var
   isProd: boolean;
 begin
   DecodeVersion(Value, major, minor, maint, build, isProd);
-  Result := Format('%d.%d.%d.%d %s', [major, minor, maint, build, IfThen(isProd, 'PROD', 'DEV')]);
+  Result := Format('%d.%d.%d.%d %s', [major, minor, maint, build,
+    IfThen(isProd, 'PROD', 'DEV')]);
 end;
 
 function StringToVersion(const s: string): cardinal;
@@ -483,7 +485,8 @@ begin
       ItemPtr := POSRangeAndType(@buf[SizeOf(integer) + i * SizeOf(TOSRangeAndType)]);
       Result.Add(Format('   range:             From %s To %s',
         [VersionToString(ItemPtr^.rangeStart), VersionToString(ItemPtr^.rangeEnd)]));
-      Result.Add(Format('    type:             %s', [DecodeOsType(ItemPtr^.osTypeBitMask)]));
+      Result.Add(Format('    type:             %s',
+        [DecodeOsType(ItemPtr^.osTypeBitMask)]));
     end;
   except
     FreeAndNil(Result);
@@ -530,6 +533,6 @@ begin
 end;
 
 initialization
-//  GenDummySig(dummy_signature);
+  //  GenDummySig(dummy_signature);
 
 end.

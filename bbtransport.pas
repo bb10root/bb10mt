@@ -5,7 +5,7 @@ unit bbtransport;
 interface
 
 uses
-  Classes, SysUtils, LibUsb, LibUsbOop, bbconst, crc, Math;
+  Classes, SysUtils, LibUsb, LibUsbOop, bbconst;
 
 type
   EUSBError = class(Exception);
@@ -34,7 +34,8 @@ type
     destructor Destroy; override;
 
     procedure Open(const ProductIDs: array of word; TimeoutMS: integer = 5000);
-    function TryOpen(const ProductIDs: array of word; TimeoutMS: integer = 5000): boolean;
+    function TryOpen(const ProductIDs: array of word;
+      TimeoutMS: integer = 5000): boolean;
     procedure Close;
 
     function ReadData(var Channel: word; var Data: TBytes): integer;
@@ -53,6 +54,8 @@ type
 function WaitForDeviceWithID(VendorID, ProductID, timeoutMS: integer): boolean;
 
 implementation
+
+uses crc;
 
 function WaitForDeviceWithID(VendorID, ProductID, timeoutMS: integer): boolean;
 var
@@ -159,7 +162,8 @@ begin
     Result := $01;
 end;
 
-function TBBTransport.TryOpen(const ProductIDs: array of word; TimeoutMS: integer = 5000): boolean;
+function TBBTransport.TryOpen(const ProductIDs: array of word;
+  TimeoutMS: integer = 5000): boolean;
 var
   cfg, i, cnt, t, j, k, epIdx: integer;
   DevList: PPlibusb_device;
@@ -215,7 +219,8 @@ begin
               Continue;
             end;
 
-            if libusb_get_active_config_descriptor(libusb_get_device(fDevice.Handle), config) <> 0 then
+            if libusb_get_active_config_descriptor(libusb_get_device(fDevice.Handle),
+              config) <> 0 then
             begin
               FreeAndNil(fDevice);
               Continue;
@@ -236,9 +241,11 @@ begin
 
                 if alt.bInterfaceClass = $FF then
                 begin
-                  if libusb_kernel_driver_active(fDevice.Handle, alt.bInterfaceNumber) = 0 then
+                  if libusb_kernel_driver_active(fDevice.Handle,
+                    alt.bInterfaceNumber) = 0 then
                   begin
-                    if libusb_claim_interface(fDevice.Handle, alt.bInterfaceNumber) = 0 then
+                    if libusb_claim_interface(fDevice.Handle,
+                      alt.bInterfaceNumber) = 0 then
                     begin
                       fClaimedInterface := alt.bInterfaceNumber;
                       fEPCount := 0;
@@ -317,7 +324,8 @@ end;
 procedure TBBTransport.Open(const ProductIDs: array of word; TimeoutMS: integer = 5000);
 begin
   if not TryOpen(ProductIDs, TimeoutMS) then
-    raise EUSBError.Create('Device with required ProductID(s) not found or could not be opened');
+    raise EUSBError.Create(
+      'Device with required ProductID(s) not found or could not be opened');
 end;
 
 function TBBTransport.ReadData(var Channel: word; var Data: TBytes): integer;
@@ -334,7 +342,8 @@ begin
   endpoint := GetEndpoint(Channel, True);
   SetLength(pkt, MAX_PACKET);
 
-  err := libusb_bulk_transfer(fDevice.Handle, endpoint, @pkt[0], MAX_PACKET, transferred, 1000);
+  err := libusb_bulk_transfer(fDevice.Handle, endpoint, @pkt[0],
+    MAX_PACKET, transferred, 1000);
 
   if err = LIBUSB_ERROR_TIMEOUT then
     raise EUSBError.Create('Timeout while reading from device')
@@ -377,7 +386,8 @@ begin
 
   endpoint := GetEndpoint(Channel, False);
 
-  err := libusb_bulk_transfer(fDevice.Handle, endpoint, @pkt[0], size, transferred, 1000);
+  err := libusb_bulk_transfer(fDevice.Handle, endpoint, @pkt[0], size,
+    transferred, 1000);
 
   if err <> 0 then
     raise EUSBError.CreateFmt('USB write error (%d)', [err]);

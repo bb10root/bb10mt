@@ -112,14 +112,17 @@ end;
 function GenerateManifestHeader(const Name: string): string;
 begin
   Result := Format('Archive-Manifest-Version: 1.5' + LineEnding +
-    'Archive-Created-By: BlackBerry Data BAR Packager 1.11' + LineEnding +
-    'Package-Type: system-data' + LineEnding + 'Package-Author: Research In Motion Limited' +
-    LineEnding + 'Package-Author-Id: andrA%s' + LineEnding + 'Package-Name: sys.data.%s' +
+    'Archive-Created-By: BlackBerry Data BAR Packager 1.11' +
+    LineEnding + 'Package-Type: system-data' + LineEnding +
+    'Package-Author: Research In Motion Limited' + LineEnding +
+    'Package-Author-Id: andrA%s' + LineEnding + 'Package-Name: sys.data.%s' +
     LineEnding + 'Package-Id: andrB%s' + LineEnding + 'Package-Version: 1.0.0.0' +
-    LineEnding + 'Package-Version-Id: andrC%s' + LineEnding + 'Package-Architecture: armle-v7' +
-    LineEnding + LineEnding + 'System-Data-Type: os_data' + LineEnding +
-    'System-Data-Requires-System: os/10.0.0.8' + LineEnding + 'System-Data-Persistence: permanent' +
-    LineEnding, [GetRandomId, Name, GetRandomId, GetRandomId]);
+    LineEnding + 'Package-Version-Id: andrC%s' + LineEnding +
+    'Package-Architecture: armle-v7' + LineEnding + LineEnding +
+    'System-Data-Type: os_data' + LineEnding +
+    'System-Data-Requires-System: os/10.0.0.8' + LineEnding +
+    'System-Data-Persistence: permanent' + LineEnding,
+    [GetRandomId, Name, GetRandomId, GetRandomId]);
 end;
 
 function ManifestMain(const aFileName: string): string;
@@ -203,7 +206,8 @@ begin
   end;
 end;
 
-function FindSectionWithAttrs(Sections: TJSONArray; const Attrs: array of string): TJSONObject;
+function FindSectionWithAttrs(Sections: TJSONArray;
+  const Attrs: array of string): TJSONObject;
 var
   i, a: integer;
   Section, Inner: TJSONObject;
@@ -266,8 +270,8 @@ begin
   Result := Format('%s.%s', [PackageName, PackageId]);
 end;
 
-function ConvertManifestToApplications(ManifestJSON: TJSONObject; const Gid: integer;
-  const Extras: string): string;
+function ConvertManifestToApplications(ManifestJSON: TJSONObject;
+  const Gid: integer; const Extras: string): string;
 var
   OutputJSON: TJSONObject;
   Sections: TJSONArray;
@@ -280,8 +284,8 @@ begin
     if (Sections = nil) or (Sections.Count = 0) then
       raise Exception.Create('Manifest has no sections.');
 
-    Attrs := FindSectionWithAttrs(Sections, ['Package-Name', 'Package-Id', 'Package-Version',
-      'Package-Version-Id']);
+    Attrs := FindSectionWithAttrs(Sections, ['Package-Name', 'Package-Id',
+      'Package-Version', 'Package-Version-Id']);
     if Attrs = nil then
       raise Exception.Create('Required package fields not found.');
 
@@ -303,8 +307,8 @@ begin
   end;
 end;
 
-function ConvertManifestToRegisteredApp(Manifest: TJSONObject; const Gid: integer;
-  const Extras: string): string;
+function ConvertManifestToRegisteredApp(Manifest: TJSONObject;
+  const Gid: integer; const Extras: string): string;
 var
   Sections: TJSONArray;
   Attrs: TJSONObject;
@@ -314,7 +318,8 @@ begin
   if (Sections = nil) or (Sections.Count = 0) then
     raise Exception.Create('Manifest has no sections.');
 
-  Attrs := FindSectionWithAttrs(Sections, ['Package-Name', 'Package-Id', 'Package-Version']);
+  Attrs := FindSectionWithAttrs(Sections, ['Package-Name', 'Package-Id',
+    'Package-Version']);
   if Attrs = nil then
     raise Exception.Create('Required fields not found.');
 
@@ -322,7 +327,8 @@ begin
   PkgId := GetAttr(Attrs, 'Package-Id');
   PkgVersion := GetAttr(Attrs, 'Package-Version');
 
-  Result := Format('%s.%s::%s,%s,,,%d,%s', [PkgName, PkgId, PkgId, PkgVersion, Gid, Extras]);
+  Result := Format('%s.%s::%s,%s,,,%d,%s', [PkgName, PkgId, PkgId,
+    PkgVersion, Gid, Extras]);
 end;
 
 function ConvertManifestToServices(Manifest: TJSONObject): TStringList;
@@ -376,7 +382,8 @@ var
       JSONArr.Add(PathList[j]);
 
     Key := Format('%s.%s..%s', [PkgName, PkgId, EPKey]);
-    JsonPart := Format('json:{"entry":"%s","timeout":%s,"path":%s}', [EPKey, Timeout, JSONArr.AsJSON]);
+    JsonPart := Format('json:{"entry":"%s","timeout":%s,"path":%s}',
+      [EPKey, Timeout, JSONArr.AsJSON]);
 
     ResultPairs.Values[Key] := JsonPart;
   end;
@@ -461,7 +468,8 @@ begin
             begin
               AttrVar := PropNode.Attributes.GetNamedItem('var');
               AttrValue := PropNode.Attributes.GetNamedItem('value');
-              if Assigned(AttrVar) and Assigned(AttrValue) and (AttrVar.NodeValue = 'uris') then
+              if Assigned(AttrVar) and Assigned(AttrValue) and
+                (AttrVar.NodeValue = 'uris') then
                 Uris := 'uris=' + AttrValue.NodeValue + ';';
             end;
 
@@ -574,7 +582,8 @@ begin
   end;
 end;
 
-procedure DeleteLinesWithPrefixes(var Lines: TStringList; const Prefixes: array of string);
+procedure DeleteLinesWithPrefixes(var Lines: TStringList;
+  const Prefixes: array of string);
 var
   i, j: integer;
   Line: string;
@@ -622,7 +631,8 @@ begin
   end;
 end;
 
-procedure ReplaceOrAddLines(var Lines: TStringList; const Prefixes, NewLines: array of string);
+procedure ReplaceOrAddLines(var Lines: TStringList;
+  const Prefixes, NewLines: array of string);
 var
   i, j: integer;
   Found: array of boolean;
@@ -652,7 +662,8 @@ begin
   end;
 end;
 
-procedure ReplaceOrAddLinesWithPrefixes(const FileName: string; const Prefixes, NewLines: array of string);
+procedure ReplaceOrAddLinesWithPrefixes(const FileName: string;
+  const Prefixes, NewLines: array of string);
 var
   Lines: TStringList;
 begin
@@ -716,8 +727,9 @@ begin
       end;
     end;
 
-    TargetFile := IfThen(MaxIndex < 0, IncludeTrailingPathDelimiter(Dir) + BaseName,
-      Format('%s%s.%.3d', [IncludeTrailingPathDelimiter(Dir), BaseName, MaxIndex]));
+    TargetFile := IfThen(MaxIndex < 0, IncludeTrailingPathDelimiter(Dir) +
+      BaseName, Format('%s%s.%.3d', [IncludeTrailingPathDelimiter(Dir),
+      BaseName, MaxIndex]));
 
     if FileExists(TargetFile) then
       Lines.LoadFromFile(TargetFile)
@@ -767,7 +779,8 @@ begin
     if Assigned(Section) and Assigned(Section.Objects['_']) then
     begin
       Attrs := Section.Objects['_'];
-      if (GetAttr(Attrs, 'Package-Name') <> '') and (GetAttr(Attrs, 'Package-Id') <> '') then
+      if (GetAttr(Attrs, 'Package-Name') <> '') and
+        (GetAttr(Attrs, 'Package-Id') <> '') then
         Break;
     end;
   end;
@@ -810,8 +823,9 @@ begin
     SplashList.Delimiter := ':';
     SplashList.DelimitedText := SplashRaw;
 
-    Result := Format('%s.%s::%s,%s,%s,%s,%s', [PkgName, PkgId, IconList.DelimitedText,
-      DisplayName, Categories, SplashList.DelimitedText, FixedPart]);
+    Result := Format('%s.%s::%s,%s,%s,%s,%s', [PkgName, PkgId,
+      IconList.DelimitedText, DisplayName, Categories, SplashList.DelimitedText,
+      FixedPart]);
   finally
     IconList.Free;
     SplashList.Free;
@@ -821,7 +835,8 @@ end;
 procedure UpdateHashes(const aBaseDir: string);
 const
   EntryFmt: string =
-    'Archive-Asset-Name: %s' + sLineBreak + 'Archive-Asset-SHA-512-Digest: %s' + sLineBreak;
+    'Archive-Asset-Name: %s' + sLineBreak + 'Archive-Asset-SHA-512-Digest: %s' +
+    sLineBreak;
 var
   BaseDir, AssetDir, ManifestFile: string;
   BaseLen: integer;

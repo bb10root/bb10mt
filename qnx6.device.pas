@@ -78,7 +78,8 @@ type
     property FreeBlocks: DWord read fRawData.free_blocks write fRawData.free_blocks;
     property AllocGroup: DWord read fRawData.allocgroup write fRawData.allocgroup;
 
-    property MigrateBlocks: DWord read fRawData.migrate_blocks write fRawData.migrate_blocks;
+    property MigrateBlocks: DWord read fRawData.migrate_blocks
+      write fRawData.migrate_blocks;
     property ScrubBlock: DWord read fRawData.scrub_block write fRawData.scrub_block;
 
     property SelfPos: int64 read fSelfPos write fSelfPos;
@@ -197,7 +198,8 @@ begin
   chk := CRC32_QNX(@Raw.Serial, SizeOf(TQNX6_SuperBlockRaw) - 8);
 
   Result :=
-    ((Raw.Magic = QNX6FS_SIGNATURE) or (Raw.Magic = QNX6FS_SIGNATURE2)) and (chk = Raw.CRC);
+    ((Raw.Magic = QNX6FS_SIGNATURE) or (Raw.Magic = QNX6FS_SIGNATURE2)) and
+    (chk = Raw.CRC);
 end;
 
 function TQNX6_SuperBlock.isValid: boolean;
@@ -398,8 +400,8 @@ begin
   rBitmapBlocks := iceil(rBitmapBytes, fBlockSize);
 
   fSys0AreaStart := 0;
-  fSys1AreaStart := rInodes + NeededExtraBlocksLocal(rInodes) + rBitmapBlocks +
-    NeededExtraBlocksLocal(rBitmapBlocks);
+  fSys1AreaStart := rInodes + NeededExtraBlocksLocal(rInodes) +
+    rBitmapBlocks + NeededExtraBlocksLocal(rBitmapBlocks);
   fUserAreaStart := 2 * fSys1AreaStart;
 
   if fBlockSize <= 4096 then

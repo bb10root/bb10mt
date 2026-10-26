@@ -106,7 +106,8 @@ implementation
 
 { TQNX6InodeManager }
 
-constructor TQNX6InodeManager.Create(ADevice: TQNX6VolumeDevice; ABlockMgr: TQNX6BlockManager);
+constructor TQNX6InodeManager.Create(ADevice: TQNX6VolumeDevice;
+  ABlockMgr: TQNX6BlockManager);
 begin
   inherited Create;
   fDevice := ADevice;
@@ -188,7 +189,8 @@ begin
   end;
 
   if (p < DWord(fInodesBlocks.level[0].Count)) then
-    Result := fDevice.DataStart + QWord(fInodesBlocks.level[0].Data[p]) * fDevice.BlockSize + r
+    Result := fDevice.DataStart + QWord(fInodesBlocks.level[0].Data[p]) *
+      fDevice.BlockSize + r
   else
     Result := 0;
 end;
@@ -287,7 +289,8 @@ end;
 
 function TQNX6InodeManager.IsValidInode(idx: DWord): boolean;
 begin
-  Result := (idx > 0) and (Assigned(fDevice.ActiveSB)) and (idx <= fDevice.ActiveSB.NumInodes);
+  Result := (idx > 0) and (Assigned(fDevice.ActiveSB)) and
+    (idx <= fDevice.ActiveSB.NumInodes);
 end;
 
 function TQNX6InodeManager.GetInode(idx: dword): TQNX6_DInode;
@@ -421,7 +424,8 @@ begin
 
   SetLength(Buff, preloadCount);
   if preloadCount > 0 then
-    fBlockMgr.LoadBlockData(fInodesBlocks, @Buff[0], preloadCount * SizeOf(TQNX6_DInode));
+    fBlockMgr.LoadBlockData(fInodesBlocks, @Buff[0], preloadCount *
+      SizeOf(TQNX6_DInode));
 
   fFreeInodes.Clear;
   fUsedInodesList.Clear;
@@ -508,7 +512,8 @@ begin
   {$ENDIF}
 end;
 
-procedure TQNX6InodeManager.SaveInodeBlocks(idx: dword; size: qword; var Blocks: TBlocksList);
+procedure TQNX6InodeManager.SaveInodeBlocks(idx: dword; size: qword;
+  var Blocks: TBlocksList);
 var
   inode: TQNX6_DInode;
 begin

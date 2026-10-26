@@ -173,7 +173,8 @@ begin
   KeyPath := ExpandFileName(KeyPath);
   if not ReadPublicKeyFile(KeyPath, SSHPublicKey) then
   begin
-    TConsole.WriteLn('Can''t read SSH public key file or file is empty: ' + KeyPath, ccRed);
+    TConsole.WriteLn('Can''t read SSH public key file or file is empty: ' +
+      KeyPath, ccRed);
     Exit(2);
   end;
 
@@ -233,7 +234,8 @@ begin
 end;
 
 initialization
-  NETCommand := TNETCommand.Create('connect', 'Connect to BlackBerry device over USB/Net');
+  NETCommand := TNETCommand.Create('connect',
+    'Connect to BlackBerry device over USB/Net');
   NETCommand.AddStringParameter('-i', '--ip', 'IP of target you wish to connect with');
   NETCommand.AddStringParameter('-p', '--password', 'device password', True);
   NETCommand.AddPathParameter('-k', '--sshPublicKey',

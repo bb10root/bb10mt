@@ -51,7 +51,8 @@ type
   end;
 
 function ParseMCTStream(Stream: TStream): TMCTParsed;
-procedure ExtractMCTPartitionsToFiles(Stream: TStream; const Parsed: TMCTParsed; const DestDir: string);
+procedure ExtractMCTPartitionsToFiles(Stream: TStream; const Parsed: TMCTParsed;
+  const DestDir: string);
 procedure RunExtract(const DumpFile: string; const OutDir: string);
 procedure ParseAndShow(const FileName: string);
 procedure ShowParsedMCT(const Parsed: TMCTParsed; Verbose: boolean = False);
@@ -174,7 +175,8 @@ begin
         if CRCActual = CRCFromBlock then
           Writeln(Format('[CRC] OK: %.8x', [CRCActual]))
         else
-          Writeln(Format('[CRC] MISMATCH! Got=%.8x Expected=%.8x', [CRCFromBlock, CRCActual]));
+          Writeln(Format('[CRC] MISMATCH! Got=%.8x Expected=%.8x',
+            [CRCFromBlock, CRCActual]));
       end;
 
       if T = $FF then
@@ -204,8 +206,9 @@ begin
       begin
         PartName := GetPartitionName(E.Partition.Name);
         Writeln(Format('[%d] Partition "%s" Offset=$%.8x Size=$%.8x Type=$%.2x',
-          [i, PartName, E.Partition.StartBlock shl 16, ((E.Partition.EndBlock + 1) shl 16) -
-          (E.Partition.StartBlock shl 16), E.Partition.PartitionID]));
+          [i, PartName, E.Partition.StartBlock shl 16,
+          ((E.Partition.EndBlock + 1) shl 16) - (E.Partition.StartBlock shl 16),
+          E.Partition.PartitionID]));
       end;
       ekConfig:
         Writeln(Format('[%d] Config Param=%.4x Value=%.4x Flags=%.8x',
@@ -217,7 +220,8 @@ begin
       ekTag:
         Writeln(Format('[%d] Tag block, Len=%d', [i, Length(E.RawData)]));
       ekUnknown:
-        Writeln(Format('[%d] Unknown type=%.2x, Len=%d', [i, E.RawType, Length(E.RawData)]));
+        Writeln(Format('[%d] Unknown type=%.2x, Len=%d',
+          [i, E.RawType, Length(E.RawData)]));
     end;
   end;
 end;
@@ -236,7 +240,8 @@ begin
   end;
 end;
 
-procedure ExtractMCTPartitionsToFiles(Stream: TStream; const Parsed: TMCTParsed; const DestDir: string);
+procedure ExtractMCTPartitionsToFiles(Stream: TStream; const Parsed: TMCTParsed;
+  const DestDir: string);
 const
   BLOCK_SIZE = $10000;
   CHUNK_SIZE = $100000; // 1MB buffer for fast stream copying
@@ -273,7 +278,8 @@ begin
   if not FoundNVRAM then
     raise Exception.Create('Partition "nvram" not found. Cannot determine base address');
 
-  Writeln(Format('[i] NVRAM offset = $%.8x -> BaseAddr = $%.8x', [NvramOffset, BaseAddr]));
+  Writeln(Format('[i] NVRAM offset = $%.8x -> BaseAddr = $%.8x',
+    [NvramOffset, BaseAddr]));
 
   // 2. Зберігаємо всі розділи блоковим копіюванням
   for i := 0 to High(Parsed.Entries) do
@@ -292,8 +298,8 @@ begin
       continue;
     end;
 
-    FileName := Format('%s/%2.2x_%s.bin', [IncludeTrailingPathDelimiter(DestDir),
-      E.Partition.PartitionID, PartName]);
+    FileName := Format('%s/%2.2x_%s.bin',
+      [IncludeTrailingPathDelimiter(DestDir), E.Partition.PartitionID, PartName]);
 
     Writeln(Format('[+] Writing partition "%s" to "%s" Offset=$%.8x Size=$%.8x',
       [PartName, FileName, PartOffset, PartSize]));

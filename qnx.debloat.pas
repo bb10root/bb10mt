@@ -8,20 +8,24 @@ uses
   Classes, SysUtils, qnx6, QNX.Utils;
 
 type
-  TApplyChmodProc = function(FS: TQNX6Fs; const Path: string; Mode: integer; Recursive: boolean): integer;
+  TApplyChmodProc = function(FS: TQNX6Fs; const Path: string;
+    Mode: integer; Recursive: boolean): integer;
 
-procedure GenUninstallScript(BlackList: TStringList; WhiteList: TStringList; msData: TMemoryStream);
+procedure GenUninstallScript(BlackList: TStringList; WhiteList: TStringList;
+  msData: TMemoryStream);
 function ParseAppNamesFromStream(AMemoryStream: TMemoryStream): TStringArray;
 
 // Перевантажені процедури
-procedure UninstallApps(FS: TQNX6Fs; BlackList: TStringList; ChmodProc: TApplyChmodProc); overload;
+procedure UninstallApps(FS: TQNX6Fs; BlackList: TStringList;
+  ChmodProc: TApplyChmodProc); overload;
 procedure UninstallApps(FS: TQNX6Fs; BlackList: TStringList); overload;
 
 implementation
 
 uses CLI.Console;
 
-procedure GenUninstallScript(BlackList: TStringList; WhiteList: TStringList; msData: TMemoryStream);
+procedure GenUninstallScript(BlackList: TStringList; WhiteList: TStringList;
+  msData: TMemoryStream);
 var
   i: integer;
 begin
@@ -44,7 +48,8 @@ begin
   BlackList.SaveToStream(msData);
 end;
 
-procedure UninstallApps(FS: TQNX6Fs; BlackList: TStringList; ChmodProc: TApplyChmodProc); overload;
+procedure UninstallApps(FS: TQNX6Fs; BlackList: TStringList;
+  ChmodProc: TApplyChmodProc); overload;
 const
   DEBLOAT_SCRIPT_PATH = '/accounts/devuser/rootdata/debloat.txt';
   OCTAL_777 = $1FF;
@@ -76,12 +81,14 @@ begin
       FS.CreateFile(PChar(DEBLOAT_SCRIPT_PATH), OCTAL_777);
       if qnx6_writeFile(FS, DEBLOAT_SCRIPT_PATH, msData) = 0 then
       begin
-        TConsole.WriteLn('Successfully created debloat script at: ' + DEBLOAT_SCRIPT_PATH);
+        TConsole.WriteLn('Successfully created debloat script at: ' +
+          DEBLOAT_SCRIPT_PATH);
         if Assigned(ChmodProc) then
           ChmodProc(FS, DEBLOAT_SCRIPT_PATH, OCTAL_777, False);
       end
       else
-        TConsole.WriteLn(Format('Error: Failed to write uninstall script to %s', [DEBLOAT_SCRIPT_PATH]));
+        TConsole.WriteLn(Format('Error: Failed to write uninstall script to %s',
+          [DEBLOAT_SCRIPT_PATH]));
     end;
   finally
     FreeAndNil(msData);

@@ -34,11 +34,13 @@ begin
       CmdList.RegisterCommand(
         TMkDirCommand.Create('mkdir', 'create directory', 'mkdir [-p] <path>', QNX));
       CmdList.RegisterCommand(
-        TPushCommand.Create('push', 'push file/dir to image', 'push <src path> <dst path>', QNX));
+        TPushCommand.Create('push', 'push file/dir to image',
+        'push <src path> <dst path>', QNX));
       CmdList.RegisterCommand(
         TTouchCommand.Create('touch', 'create empty file', 'touch <file>', QNX));
       CmdList.RegisterCommand(
-        TChmodCommand.Create('chmod', 'change file/dir mode', 'chmod [-R] <mode> <path>', QNX));
+        TChmodCommand.Create('chmod', 'change file/dir mode',
+        'chmod [-R] <mode> <path>', QNX));
       CmdList.RegisterCommand(
         TChownCommand.Create('chown', 'change file/dir owner',
         'chown [-R] <user>:<group> <path>', QNX));
@@ -51,7 +53,8 @@ begin
       CmdList.RegisterCommand(
         TRmCommand.Create('rm', 'remove file/dir mode', 'chmod [-R] <path>', QNX));
       CmdList.RegisterCommand(
-        TAddStringCommand.Create('addstring', 'add string to file', 'addstring <file> <string>', QNX));
+        TAddStringCommand.Create('addstring', 'add string to file',
+        'addstring <file> <string>', QNX));
 
       for line in script do
         CmdList.ExecuteCommand(line);

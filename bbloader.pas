@@ -14,9 +14,10 @@ type
   TBBLoader = class
   private
     fUSB: TBBTransport;
-    function SafeChannel2(Cmd: word; const Data: TBytes; expectedResp: word; const FuncName: string): TBytes;
-    function SafeChannel2Bool(Cmd: word; const Data: TBytes; expectedResp: word;
-      const FuncName: string): boolean;
+    function SafeChannel2(Cmd: word; const Data: TBytes; expectedResp: word;
+      const FuncName: string): TBytes;
+    function SafeChannel2Bool(Cmd: word; const Data: TBytes;
+      expectedResp: word; const FuncName: string): boolean;
   public
     constructor Create(usb: TBBTransport);
     function BugdispLog: TBytes;
@@ -61,8 +62,8 @@ begin
 end;
 
 // Допоміжний метод для безпечного зчитування масивів байтів
-function TBBLoader.SafeChannel2(Cmd: word; const Data: TBytes; expectedResp: word;
-  const FuncName: string): TBytes;
+function TBBLoader.SafeChannel2(Cmd: word; const Data: TBytes;
+  expectedResp: word; const FuncName: string): TBytes;
 var
   RespCmd: word;
 begin
@@ -80,8 +81,8 @@ begin
 end;
 
 // Допоміжний метод для перевірки виконання команд (повертає boolean)
-function TBBLoader.SafeChannel2Bool(Cmd: word; const Data: TBytes; expectedResp: word;
-  const FuncName: string): boolean;
+function TBBLoader.SafeChannel2Bool(Cmd: word; const Data: TBytes;
+  expectedResp: word; const FuncName: string): boolean;
 var
   RespCmd: word;
 begin
@@ -257,7 +258,8 @@ begin
     fUSB.Channel2($40C0, RespCmd, nil);
     Result := (RespCmd = $4006) or (RespCmd = $402E);
     if not Result then
-      TConsole.WriteLn(Format('Complete returned unexpected response 0x%.4X', [RespCmd]), ccRed);
+      TConsole.WriteLn(Format('Complete returned unexpected response 0x%.4X',
+        [RespCmd]), ccRed);
   except
     on E: Exception do
       TConsole.WriteLn('Error in Complete: ' + E.Message, ccRed);

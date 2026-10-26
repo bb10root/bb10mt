@@ -5,7 +5,7 @@ unit bbflasher;
 interface
 
 uses
-  Classes, SysUtils, Math, bbconst, bbLoader, qcfm, CLI.Interfaces, CLI.Progress, CLI.Console;
+  Classes, SysUtils, Math, bbconst, bbLoader;
 
 type
   TBBFlasher = class
@@ -14,13 +14,14 @@ type
     fDummySignature: array[0..559] of byte;
   public
     constructor Create(aLoader: TBBLoader);
-    function FlashStream(aStream: TStream; ModelID: cardinal; AutoFreeStream: boolean = False): integer;
+    function FlashStream(aStream: TStream; ModelID: cardinal;
+      AutoFreeStream: boolean = False): integer;
     function FlashFile(const fName: string; ModelID: cardinal; ver: byte = 2): integer;
   end;
 
 implementation
 
-uses uAutoloader, RIMSignatureParser;
+uses uAutoloader, RIMSignatureParser, qcfm, CLI.Interfaces, CLI.Progress, CLI.Console;
 
 constructor TBBFlasher.Create(aLoader: TBBLoader);
 begin
@@ -29,7 +30,8 @@ begin
   Move(signature_data[0], fDummySignature[0], SizeOf(fDummySignature));
 end;
 
-function TBBFlasher.FlashFile(const fName: string; ModelID: cardinal; ver: byte = 2): integer;
+function TBBFlasher.FlashFile(const fName: string; ModelID: cardinal;
+  ver: byte = 2): integer;
 const
   MAGIC_MFCQ = $7163666D; // Magic 'mfcq'
 var
@@ -53,8 +55,8 @@ begin
     isMFCQ := False;
     isEXE := False;
 
-    if (FileStream.Size >= SizeOf(MagicVal)) and (FileStream.Read(MagicVal, SizeOf(MagicVal)) =
-      SizeOf(MagicVal)) then
+    if (FileStream.Size >= SizeOf(MagicVal)) and
+      (FileStream.Read(MagicVal, SizeOf(MagicVal)) = SizeOf(MagicVal)) then
     begin
       isMFCQ := (MagicVal = MAGIC_MFCQ);
       isEXE := ((MagicVal and $FFFF) = $5A4D) or ((MagicVal and $FFFF) = $4D5A);
@@ -71,7 +73,8 @@ begin
         begin
           aStream := AutoLoader.OpenFileStream(i);
           Result := FlashStream(aStream, ModelID, True);
-          if Result <> 0 then Break; // Перериваємо процес у разі помилки
+          if Result <> 0 then Break;
+          // Перериваємо процес у разі помилки
         end;
       finally
         AutoLoader.Free;
@@ -95,7 +98,8 @@ begin
         // Запаковуємо звичайний файл у TMFCQPackStream
         aStream := TMFCQPackStream.Create(iFiles, nil, ver, ver = 2, True);
       finally
-        iFiles.Free; // Звільняємо список після передачі у конструктор
+        iFiles.Free;
+        // Звільняємо список після передачі у конструктор
       end;
       // Якщо це вже MFCQ, використовуємо оригінальний FileStream
     end;
@@ -106,7 +110,8 @@ begin
   end;
 end;
 
-function TBBFlasher.FlashStream(aStream: TStream; ModelID: cardinal; AutoFreeStream: boolean): integer;
+function TBBFlasher.FlashStream(aStream: TStream; ModelID: cardinal;
+  AutoFreeStream: boolean): integer;
 const
   HEADER_SIZE = 8;
 var

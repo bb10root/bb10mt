@@ -28,7 +28,8 @@ type
     ModelIndex: byte;
   end;
 
-function TryGetDeviceInfoByID(const aID: longword; out aFullInfo: TFullDeviceInfo): boolean;
+function TryGetDeviceInfoByID(const aID: longword;
+  out aFullInfo: TFullDeviceInfo): boolean;
 function IDtoADDR(const ID: cardinal): cardinal;
 
 implementation
@@ -36,21 +37,24 @@ implementation
 const
   DeviceModels: array[0..14] of TModelInfo = (
     (ModelName: 'Classic'; FullName: 'BlackBerry Classic'; Category: 'Bold'),
-    (ModelName: 'P''9983'; FullName: 'PORSCHE DESIGN P''9983 BlackBerry'; Category: 'Bold'),
+    (ModelName: 'P''9983'; FullName: 'PORSCHE DESIGN P''9983 BlackBerry';
+    Category: 'Bold'),
     (ModelName: 'Q10'; FullName: 'BlackBerry Q10'; Category: 'Bold'),
     (ModelName: 'Q5'; FullName: 'BlackBerry Q5'; Category: 'Curve'),
     (ModelName: 'Passport'; FullName: 'BlackBerry Passport'; Category: 'Passport'),
     (ModelName: 'Z30'; FullName: 'BlackBerry Z30'; Category: 'Touch'),
     (ModelName: 'Z3'; FullName: 'BlackBerry Z3'; Category: 'Touch'),
-    (ModelName: 'P''9982'; FullName: 'PORSCHE DESIGN P''9982 BlackBerry'; Category: 'Touch'),
+    (ModelName: 'P''9982'; FullName: 'PORSCHE DESIGN P''9982 BlackBerry';
+    Category: 'Touch'),
     (ModelName: 'Z10'; FullName: 'BlackBerry Z10'; Category: 'Touch'),
     (ModelName: 'Unknown'; FullName: 'Unknown'; Category: 'Unknown'),
     (ModelName: 'Leap'; FullName: 'BlackBerry Leap'; Category: 'Touch'),
     (ModelName: 'Unknown'; FullName: 'BlackBerry Unknown'; Category: 'Unknown'),
     (ModelName: 'Playbook'; FullName: 'BlackBerry Playbook'; Category: 'Playbook'),
     (ModelName: 'Anonymous'; FullName: 'BlackBerry Unknown'; Category: 'Unknown'),
-    (ModelName: 'BlackBerry 10 Dev Alpha'; FullName: 'BlackBerry 10 Dev Alpha'; Category: 'Unknown')
-  );
+    (ModelName: 'BlackBerry 10 Dev Alpha'; FullName: 'BlackBerry 10 Dev Alpha';
+    Category: 'Unknown')
+    );
 
   BB10Devices: array[0..52] of TDeviceInfo = (
     (ID: $9600270a; ModelCode: 'SQC100-1'; ModelIndex: 0),
@@ -106,9 +110,10 @@ const
     (ID: $0e001a06; ModelCode: 'P150-32HS'; ModelIndex: 12),
     (ID: $8500080a; ModelCode: 'PRO100-1'; ModelIndex: 13),
     (ID: $04002307; ModelCode: 'PRO100-2'; ModelIndex: 14)
-  );
+    );
 
-function TryGetDeviceInfoByID(const aID: longword; out aFullInfo: TFullDeviceInfo): boolean;
+function TryGetDeviceInfoByID(const aID: longword;
+  out aFullInfo: TFullDeviceInfo): boolean;
 var
   Device: TDeviceInfo;
   Model: TModelInfo;

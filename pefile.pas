@@ -160,8 +160,8 @@ begin
   if Stream.Read(DosHeader, SizeOf(DosHeader)) <> SizeOf(DosHeader) then Exit;
   if DosHeader.e_magic <> IMAGE_DOS_SIGNATURE then Exit;
 
-  if (DosHeader.e_lfanew = 0) or (DosHeader.e_lfanew >= Stream.Size - SizeOf(Signature) - SizeOf(FileHeader))
-  then Exit;
+  if (DosHeader.e_lfanew = 0) or (DosHeader.e_lfanew >= Stream.Size -
+    SizeOf(Signature) - SizeOf(FileHeader)) then Exit;
 
   Stream.Position := DosHeader.e_lfanew;
   if Stream.Read(Signature, SizeOf(Signature)) <> SizeOf(Signature) then Exit;
@@ -265,7 +265,8 @@ begin
     // Перевірка реального розташування даних секції в файлі
     if (Section.PointerToRawData > 0) and (Section.SizeOfRawData > 0) then
     begin
-      MaxOffset := Max(MaxOffset, int64(Section.PointerToRawData) + Section.SizeOfRawData);
+      MaxOffset := Max(MaxOffset, int64(Section.PointerToRawData) +
+        Section.SizeOfRawData);
     end;
   end;
 

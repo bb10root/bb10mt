@@ -8,7 +8,8 @@ uses
   Classes, SysUtils, mormot.crypt.core;
 
 function BytesToHex(const Data: TBytes): string;
-function HashPassV2(const Challenge, Salt: TBytes; const Password: string; Iterations: integer): TBytes;
+function HashPassV2(const Challenge, Salt: TBytes; const Password: string;
+  Iterations: integer): TBytes;
 
 function SHA256OfStream(AStream: TStream): TSha256Digest;
 function SHA256OfStreamHex(AStream: TStream): string;
@@ -22,8 +23,10 @@ function Base64UrlDecode(const S: string): string;
 type
   TRsaBlockType = (btEncryption = 2, btSignature = 1);
 
-function Pkcs1PadBytes(const Msg: TBytes; KeyLen: integer; BlockType: TRsaBlockType): TBytes;
-function Pkcs1UnPadBytes(const Encoded: TBytes; BlockType: TRsaBlockType; out Decoded: TBytes): boolean;
+function Pkcs1PadBytes(const Msg: TBytes; KeyLen: integer;
+  BlockType: TRsaBlockType): TBytes;
+function Pkcs1UnPadBytes(const Encoded: TBytes; BlockType: TRsaBlockType;
+  out Decoded: TBytes): boolean;
 
 function PKCS7Pad(const Data: TBytes; BlockSize: integer): TBytes;
 function PKCS7UnPad(const Data: TBytes; BlockSize: integer): TBytes;
@@ -91,7 +94,8 @@ begin
   Result := LowerCase(Result);
 end;
 
-function HashPassV2(const Challenge, Salt: TBytes; const Password: string; Iterations: integer): TBytes;
+function HashPassV2(const Challenge, Salt: TBytes; const Password: string;
+  Iterations: integer): TBytes;
 var
   HashedData: TBytes;
   Count: integer;
@@ -201,7 +205,8 @@ end;
   PKCS#1 v1.5 Padding
   M -> EM = 0x00 || BT || PS || 0x00 || M
 ===========================================================}
-function Pkcs1PadBytes(const Msg: TBytes; KeyLen: integer; BlockType: TRsaBlockType): TBytes;
+function Pkcs1PadBytes(const Msg: TBytes; KeyLen: integer;
+  BlockType: TRsaBlockType): TBytes;
 var
   PSLen, i: integer;
   R: byte;
@@ -240,7 +245,8 @@ end;
   PKCS#1 v1.5 Unpadding
   EM = 0x00 || BT || PS || 0x00 || M -> M
 ===========================================================}
-function Pkcs1UnPadBytes(const Encoded: TBytes; BlockType: TRsaBlockType; out Decoded: TBytes): boolean;
+function Pkcs1UnPadBytes(const Encoded: TBytes; BlockType: TRsaBlockType;
+  out Decoded: TBytes): boolean;
 var
   i, PSLen, MsgStart: integer;
 begin

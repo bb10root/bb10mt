@@ -45,7 +45,8 @@ type
     function GetBlockSize: dword; inline;
     function FindOrAddDirEntry(var RDI: TQNX6_ARawDirEntry): integer;
     function NameEquals(var entry: TQNX6_RawDirEntry; const TargetName: string): boolean;
-    function NameEqualsEx(var entry: TQNX6_RawDirEntry; pName: pchar; aLen: integer): boolean;
+    function NameEqualsEx(var entry: TQNX6_RawDirEntry; pName: pchar;
+      aLen: integer): boolean;
   public
     constructor Create(Stream: TStream);
     destructor Destroy; override;
@@ -326,7 +327,8 @@ begin
   fInodeMgr.EraseInode(idx);
 end;
 
-function TQNX6Fs.AllocateBlocks(Count: integer; SystemBlock: boolean = False): TDwordArray;
+function TQNX6Fs.AllocateBlocks(Count: integer;
+  SystemBlock: boolean = False): TDwordArray;
 begin
   Result := fBlockMgr.AllocateBlocks(Count, SystemBlock);
 end;
@@ -430,7 +432,8 @@ begin
       chk := 0;
 
     longEntry^.cksum := chk;
-    fDevice.WriteBlock(fInodeMgr.LongNameBlocks.level[0].Data[k], @tmp, SizeOf(TQNX6_LongName));
+    fDevice.WriteBlock(fInodeMgr.LongNameBlocks.level[0].Data[k],
+      @tmp, SizeOf(TQNX6_LongName));
     if not fDevice.DirectWrite then
       fInodeMgr.ChangedLong := True;
   end
@@ -441,7 +444,8 @@ begin
   end;
 end;
 
-function TQNX6Fs.NameEquals(var entry: TQNX6_RawDirEntry; const TargetName: string): boolean;
+function TQNX6Fs.NameEquals(var entry: TQNX6_RawDirEntry;
+  const TargetName: string): boolean;
 var
   c: integer;
   bName: utf8string;
@@ -467,7 +471,8 @@ begin
   end;
 end;
 
-function TQNX6Fs.NameEqualsEx(var entry: TQNX6_RawDirEntry; pName: pchar; aLen: integer): boolean;
+function TQNX6Fs.NameEqualsEx(var entry: TQNX6_RawDirEntry; pName: pchar;
+  aLen: integer): boolean;
 var
   bName: utf8string;
 begin
@@ -576,7 +581,8 @@ begin
     begin
       // Пропускаємо службові елементи '.' та '..' без алокацій
       if (DE[i].len = 1) and (DE[i].Data[0] = 46) then Continue; // '.'
-      if (DE[i].len = 2) and (DE[i].Data[0] = 46) and (DE[i].Data[1] = 46) then Continue; // '..'
+      if (DE[i].len = 2) and (DE[i].Data[0] = 46) and (DE[i].Data[1] = 46) then
+        Continue; // '..'
 
       // Використовуємо швидке порівняння за пойнтером на підрядок без алокацій
       if NameEqualsEx(DE[i], @pathPart[pStart], segLen) then
@@ -1329,7 +1335,8 @@ begin
     r4 := iceil(r3, fDevice.BlockSize);
 
     fDevice.Sys0AreaStart := 0;
-    fDevice.Sys1AreaStart := (r2 + iceil(r2, fDevice.PtrsInBlock) + r4 + iceil(r4, fDevice.PtrsInBlock));
+    fDevice.Sys1AreaStart := (r2 + iceil(r2, fDevice.PtrsInBlock) +
+      r4 + iceil(r4, fDevice.PtrsInBlock));
     fDevice.UserAreaStart := 2 * fDevice.Sys1AreaStart;
 
     rawSB.Magic := QNX6FS_SIGNATURE2;

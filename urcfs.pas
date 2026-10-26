@@ -172,9 +172,11 @@ begin
           script.LoadFromFile(scriptName);
           CmdList := TCommandList.Create;
           CmdList.RegisterCommand(
-            TPushCommand.Create('push', 'push file to image', 'push <src path> <dst path>'));
+            TPushCommand.Create('push', 'push file to image',
+            'push <src path> <dst path>'));
           CmdList.RegisterCommand(
-            TChmodCommand.Create('chmod', 'change file/dir mode', 'chmod <mode> <path>'));
+            TChmodCommand.Create('chmod', 'change file/dir mode',
+            'chmod <mode> <path>'));
           CmdList.RegisterCommand(
             TCorruptCommand.Create('corrupt', 'corrupt file', 'corrupt <path>'));
 
@@ -259,7 +261,8 @@ begin
       begin
         if reader.ReadSectors(parts[i].StartLBA, 1, @buf[0]) then
         begin
-          if (PDword(@buf[0])^ = $686d6972) and (PQword(@buf[8])^ = $202020736f2d7366) then
+          if (PDword(@buf[0])^ = $686d6972) and (PQword(@buf[8])^ =
+            $202020736f2d7366) then
           begin
             k := i;
             break;
@@ -295,7 +298,8 @@ begin
         script.LoadFromFile(scriptName);
         CmdList := TCommandList.Create;
         CmdList.RegisterCommand(
-          TPushCommand.Create('push', 'push file to image', 'push <src path> <dst path>'));
+          TPushCommand.Create('push', 'push file to image',
+          'push <src path> <dst path>'));
         CmdList.RegisterCommand(
           TChmodCommand.Create('chmod', 'change file/dir mode', 'chmod <mode> <path>'));
         CmdList.RegisterCommand(

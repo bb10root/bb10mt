@@ -5,8 +5,7 @@ unit RamLoader;
 interface
 
 uses
-  Classes, SysUtils, bbconst, bbdevice, bbclient,
-  bbdevicedb, bbloaderstore, bbflasher;
+  Classes, SysUtils, bbconst, bbdevice, bbloaderstore, bbclient;
 
 type
   TRamLoader = class
@@ -24,7 +23,8 @@ type
     constructor Create(Dir: string = '');
     destructor Destroy; override;
 
-    function ConnectToBB(const runLoaderDelay: integer = 1000; verbose: boolean = False): boolean;
+    function ConnectToBB(const runLoaderDelay: integer = 1000;
+      verbose: boolean = False): boolean;
     procedure RebootPhone;
     function FlashFile(fName: string; ver: byte = 2): integer;
     procedure ProbeLoaders;
@@ -38,7 +38,7 @@ type
 implementation
 
 uses
-  uInfo, CLI.Interfaces, CLI.Progress, CLI.Console, uMisc;
+  uInfo, CLI.Interfaces, CLI.Progress, CLI.Console, uMisc, bbdevicedb, bbflasher;
 
 var
   ploader: IProgressIndicator;
@@ -188,9 +188,11 @@ begin
 
     FModelID := info^.modelID;
 
-    if not fStore.ForceLoader(fStore.LoaderDirectory + DirectorySeparator + ldr, ldrData, FModelID) then
+    if not fStore.ForceLoader(fStore.LoaderDirectory + DirectorySeparator +
+      ldr, ldrData, FModelID) then
     begin
-      TConsole.WriteLn(Format('No valid signed loader file "%s" for model %.8X', [ldr, FModelID]), ccRed);
+      TConsole.WriteLn(Format('No valid signed loader file "%s" for model %.8X',
+        [ldr, FModelID]), ccRed);
       Exit(1);
     end;
 
@@ -279,7 +281,8 @@ begin
         except
           on E: Exception do
           begin
-            TConsole.WriteLn(Format('Error in probeLoader attempt %d: %s', [attempts, E.Message]), ccYellow);
+            TConsole.WriteLn(Format('Error in probeLoader attempt %d: %s',
+              [attempts, E.Message]), ccYellow);
             Inc(attempts);
             if attempts < 20 then Sleep(100);
           end;
@@ -292,7 +295,8 @@ begin
   end;
 end;
 
-function TRamLoader.ConnectToBB(const runLoaderDelay: integer = 1000; verbose: boolean = False): boolean;
+function TRamLoader.ConnectToBB(const runLoaderDelay: integer = 1000;
+  verbose: boolean = False): boolean;
 const
   MaxPostRunAttempts = 600;
 var
@@ -335,7 +339,8 @@ begin
     if verbose then
     begin
       TryGetDeviceInfoByID(info^.modelID, devInfo);
-      TConsole.WriteLn(Format('%s %s (%.8x)', [devInfo.FullName, devInfo.ModelCode, int64(info^.modelID)]));
+      TConsole.WriteLn(Format('%s %s (%.8x)', [devInfo.FullName,
+        devInfo.ModelCode, int64(info^.modelID)]));
       TConsole.WriteLn('Build User: ' + ReadCString(info^.BuildUser));
       TConsole.WriteLn('Build Date: ' + ReadCString(info^.BuildDate));
       TConsole.WriteLn('Build Time: ' + ReadCString(info^.BuildTime));

@@ -29,10 +29,10 @@ type
 
 procedure ECDSA_GenerateKey(out Priv: TBIHandle; out Pub: TECPoint);
 // buffer msg: pointer to message bytes, len: length in bytes
-procedure ECDSA_Sign(const Msg: Pointer; const MsgLen: nativeint; const Priv: TBIHandle;
-  out Sig: TECDSASignature);
-function ECDSA_Verify(const Msg: Pointer; const MsgLen: nativeint; const Pub: TECPoint;
-  const Sig: TECDSASignature): boolean;
+procedure ECDSA_Sign(const Msg: Pointer; const MsgLen: nativeint;
+  const Priv: TBIHandle; out Sig: TECDSASignature);
+function ECDSA_Verify(const Msg: Pointer; const MsgLen: nativeint;
+  const Pub: TECPoint; const Sig: TECDSASignature): boolean;
 
 // Helpers for encoding/decoding DER/point
 function EncodePointUncompressed(const P: TECPoint): TBytes;
@@ -81,12 +81,16 @@ const
   // Перетворення hex char → nibble
   HexCharToNibble: array[char] of byte = (
     // '0'-'9', 'A'-'F', 'a'-'f', решта $FF
-    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, //0..15
-    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, //16..31
-    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, //32..47
+    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF,
+    $FF, $FF, $FF, //0..15
+    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF,
+    $FF, $FF, $FF, //16..31
+    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF,
+    $FF, $FF, $FF, //32..47
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, $FF, $FF, $FF, $FF, $FF, $FF, // '0'-'9' = 48..57
     $FF, $FF, $FF, $FF, $FF, $FF, // 58..63
-    $FF, $10, $11, $12, $13, $14, $15, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, // 'A'-'F' = 65..70
+    $FF, $10, $11, $12, $13, $14, $15, $FF, $FF, $FF, $FF, $FF, $FF,
+    $FF, $FF, $FF, // 'A'-'F' = 65..70
     $FF, $10, $11, $12, $13, $14, $15, // 'a'-'f' = 97..102
     $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF,
     $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF,
@@ -129,7 +133,8 @@ begin
   end;
 
   if TrimLeadingZeros then
-    while (Result^.Size > 1) and (Result^.Value^[Result^.Size - 1] = 0) do Dec(Result^.Size);
+    while (Result^.Size > 1) and (Result^.Value^[Result^.Size - 1] = 0) do
+      Dec(Result^.Size);
 end;
 
 
@@ -194,7 +199,8 @@ begin
   end;
 
   if TrimLeadingZeros then
-    while (Result^.Size > 1) and (Result^.Value^[Result^.Size - 1] = 0) do Dec(Result^.Size);
+    while (Result^.Size > 1) and (Result^.Value^[Result^.Size - 1] = 0) do
+      Dec(Result^.Size);
 end;
 
 { --------------------------
@@ -251,10 +257,12 @@ begin
   end;
 
   if TrimLeadingZeros then
-    while (Result^.Size > 1) and (Result^.Value^[Result^.Size - 1] = 0) do Dec(Result^.Size);
+    while (Result^.Size > 1) and (Result^.Value^[Result^.Size - 1] = 0) do
+      Dec(Result^.Size);
 end;
 
-function BI_FromBytes_BE_Ptr(const Buf: pbyte; Len: integer; TrimLeadingZeros: boolean = True): PBigInt;
+function BI_FromBytes_BE_Ptr(const Buf: pbyte; Len: integer;
+  TrimLeadingZeros: boolean = True): PBigInt;
 var
   tmp: TBytes;
 begin
@@ -318,7 +326,8 @@ begin
   end;
 
   if TrimLeadingZeros then
-    while (Result^.Size > 1) and (Result^.Value^[Result^.Size - 1] = 0) do Dec(Result^.Size);
+    while (Result^.Size > 1) and (Result^.Value^[Result^.Size - 1] = 0) do
+      Dec(Result^.Size);
 end;
 
 function BI_ToHex_BE(H: PBigInt; TrimLeadingZeros: boolean = True): string;
@@ -644,7 +653,8 @@ end;
 type
   THashFunction = function(const Data: TBytes): TBytes;
 
-function HMAC(const Key, Data: TBytes; HashFunc: THashFunction; BlockSize: integer): TBytes;
+function HMAC(const Key, Data: TBytes; HashFunc: THashFunction;
+  BlockSize: integer): TBytes;
 var
   i: integer;
   k0, ipad, opad, innerData, outerData, Si: TBytes;
@@ -727,7 +737,8 @@ begin
   if Length(C) > 0 then Move(C[0], Result[Length(A) + Length(B)], Length(C));
 end;
 
-function RFC6979_GenerateK(const PrivBytes: TBytes; const Hash: TBytes; const q: TBIHandle): TBIHandle;
+function RFC6979_GenerateK(const PrivBytes: TBytes; const Hash: TBytes;
+  const q: TBIHandle): TBIHandle;
 var
   V, K, bx, t, tmp: TBytes;
   qlenBytes, Tlen: integer;
@@ -993,8 +1004,8 @@ begin
   ScalarMultiply(tmp, Priv, Pub);
 end;
 
-procedure ECDSA_Sign(const Msg: Pointer; const MsgLen: nativeint; const Priv: TBIHandle;
-  out Sig: TECDSASignature);
+procedure ECDSA_Sign(const Msg: Pointer; const MsgLen: nativeint;
+  const Priv: TBIHandle; out Sig: TECDSASignature);
 var
   hashBytes, privBytes: TBytes;
   k, r, s, kinv, tmp, e: TBIHandle;
@@ -1002,7 +1013,8 @@ var
   tmpP, P: TECPoint;
 begin
   // Hash message with SHA-512
-  hashBytes := SHA512_Short(Copy(TBytes(Msg^), 0, MsgLen)); // adapter: replace with proper conversion
+  hashBytes := SHA512_Short(Copy(TBytes(Msg^), 0, MsgLen));
+  // adapter: replace with proper conversion
   privBytes := BI_ToBytes_BE(Priv);
 
   // k = RFC6979(...) or random fallback
@@ -1042,8 +1054,8 @@ begin
   PointFree(P);
 end;
 
-function ECDSA_Verify(const Msg: Pointer; const MsgLen: nativeint; const Pub: TECPoint;
-  const Sig: TECDSASignature): boolean;
+function ECDSA_Verify(const Msg: Pointer; const MsgLen: nativeint;
+  const Pub: TECPoint; const Sig: TECDSASignature): boolean;
 var
   e, w, u1, u2, v, tmp: TBIHandle;
   tmpP, P1, P2, R: TECPoint;
@@ -1151,7 +1163,8 @@ begin
 end;
 
 
-function DecodePointCompressed(const Buf: TBytes; Curve: PEC_Curve; out P: TECPoint): boolean;
+function DecodePointCompressed(const Buf: TBytes; Curve: PEC_Curve;
+  out P: TECPoint): boolean;
 var
   prefix: byte;
   x, y, tmp, pMinusY: PBigInt;
@@ -1168,7 +1181,8 @@ begin
   // Y² = X³ + a*X + b mod p
   tmp := BI_ModPow(P.X, BI_FromUInt32(3), Curve^.P);        // X^3 mod p
   tmp := BI_MulMod(Curve^.A, P.X, Curve^.P);                     // tmp := tmp + a*X
-  tmp := BI_AddMod(tmp, Curve^.B, Curve^.P);                           // tmp := tmp + b mod p
+  tmp := BI_AddMod(tmp, Curve^.B, Curve^.P);
+  // tmp := tmp + b mod p
   y := BI_ModSqrt(tmp, Curve^.P);                               // y = sqrt(tmp) mod p
 
   if y = nil then Exit; // немає кореня ⇒ неправильна точка

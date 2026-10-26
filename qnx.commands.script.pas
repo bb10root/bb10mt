@@ -43,7 +43,8 @@ type
   TChownCommand = class(TBasicCommand)
   private
     FFS: TQNX6Fs;
-    procedure ParseOwnerGroup(const Arg: string; var Uid, Gid: integer; var Valid: boolean);
+    procedure ParseOwnerGroup(const Arg: string; var Uid, Gid: integer;
+      var Valid: boolean);
   public
     constructor Create(const AName, AHelp, AUsage: string; AFS: TQNX6Fs);
     function Execute(const Args: array of string): integer; override;
@@ -81,8 +82,10 @@ type
     function Execute(const Args: array of string): integer; override;
   end;
 
-function ApplyChmod(FS: TQNX6Fs; const Path: string; Mode: integer; Recursive: boolean): integer;
-function ApplyChown(FS: TQNX6Fs; const Path: string; Uid, Gid: integer; Recursive: boolean): integer;
+function ApplyChmod(FS: TQNX6Fs; const Path: string; Mode: integer;
+  Recursive: boolean): integer;
+function ApplyChown(FS: TQNX6Fs; const Path: string; Uid, Gid: integer;
+  Recursive: boolean): integer;
 
 implementation
 
@@ -103,10 +106,11 @@ type
 
   { Private Helper Functions }
 
-function ApplyChmodByInode(FS: TQNX6Fs; Idx: DWord; const Path: string; Mode: integer;
-  Recursive: boolean): integer; forward;
+function ApplyChmodByInode(FS: TQNX6Fs; Idx: DWord; const Path: string;
+  Mode: integer; Recursive: boolean): integer; forward;
 
-function ApplyChmod(FS: TQNX6Fs; const Path: string; Mode: integer; Recursive: boolean): integer;
+function ApplyChmod(FS: TQNX6Fs; const Path: string; Mode: integer;
+  Recursive: boolean): integer;
 var
   Idx: DWord;
 begin
@@ -119,13 +123,14 @@ begin
     TConsole.WriteLn(Format('chmod: [ERROR] Path "%s" not found', [Path]));
     Exit;
   end;
-  TConsole.WriteLn(Format('chmod: [INFO] Mode set to %s for "%s"', [OctStr(Mode and $0FFF, 4), Path]));
+  TConsole.WriteLn(Format('chmod: [INFO] Mode set to %s for "%s"',
+    [OctStr(Mode and $0FFF, 4), Path]));
 
   Result := ApplyChmodByInode(FS, Idx, Path, Mode, Recursive);
 end;
 
-function ApplyChmodByInode(FS: TQNX6Fs; Idx: DWord; const Path: string; Mode: integer;
-  Recursive: boolean): integer;
+function ApplyChmodByInode(FS: TQNX6Fs; Idx: DWord; const Path: string;
+  Mode: integer; Recursive: boolean): integer;
 var
   I, Count: integer;
   Inode: TQNX6_DInode;
@@ -170,7 +175,8 @@ begin
     Result := 0;
 end;
 
-function ApplyChown(FS: TQNX6Fs; const Path: string; Uid, Gid: integer; Recursive: boolean): integer;
+function ApplyChown(FS: TQNX6Fs; const Path: string; Uid, Gid: integer;
+  Recursive: boolean): integer;
 var
   Idx: DWord;
   I, Count: integer;
@@ -211,7 +217,8 @@ begin
     FS.SetInode(Idx, Inode);
 
     if not Recursive then
-      TConsole.WriteLn(Format('chown: [INFO] Owner/group set to %d:%d for "%s"', [Uid, Gid, Path]));
+      TConsole.WriteLn(Format('chown: [INFO] Owner/group set to %d:%d for "%s"',
+        [Uid, Gid, Path]));
 
     Result := 0;
   end
@@ -219,7 +226,8 @@ begin
     TConsole.WriteLn(Format('chown: [ERROR] Path "%s" not found', [Path]));
 end;
 
-function ReplaceInStream(Stream: TMemoryStream; const OldStr, NewStr: rawbytestring): boolean;
+function ReplaceInStream(Stream: TMemoryStream;
+  const OldStr, NewStr: rawbytestring): boolean;
 var
   DataStr, ModifiedStr: rawbytestring;
 begin
@@ -369,12 +377,14 @@ begin
   if DstPath.EndsWith('/') then
     DstPath := DstPath + ExtractFileName(ExcludeTrailingPathDelimiter(SrcPath));
 
-  TConsole.WriteLn(Format('[INFO] Pushing directory structure from "%s" to "%s"...', [SrcPath, DstPath]));
+  TConsole.WriteLn(Format('[INFO] Pushing directory structure from "%s" to "%s"...',
+    [SrcPath, DstPath]));
 
   PushedCount := qnx6_PushDir(FFS, SrcPath, DstPath);
   if PushedCount >= 0 then
   begin
-    TConsole.WriteLn(Format('[INFO] Push completed successfully. Total files pushed: %d', [PushedCount]));
+    TConsole.WriteLn(Format('[INFO] Push completed successfully. Total files pushed: %d',
+      [PushedCount]));
     Result := 0;
   end
   else
@@ -464,7 +474,8 @@ begin
   except
     on E: EConvertError do
     begin
-      TConsole.WriteLn(Format('[ERROR] Invalid mode format "%s". Use octal (e.g., 755).', [ModeStr]));
+      TConsole.WriteLn(Format('[ERROR] Invalid mode format "%s". Use octal (e.g., 755).',
+        [ModeStr]));
       Exit(2);
     end;
   end;
@@ -490,7 +501,8 @@ begin
   FFS := AFS;
 end;
 
-procedure TChownCommand.ParseOwnerGroup(const Arg: string; var Uid, Gid: integer; var Valid: boolean);
+procedure TChownCommand.ParseOwnerGroup(const Arg: string; var Uid, Gid: integer;
+  var Valid: boolean);
 var
   ColonPos: integer;
   UidStr, GidStr: string;
@@ -562,7 +574,8 @@ begin
   if Result = 0 then
   begin
     if IsRecursive then
-      TConsole.WriteLn(Format('chown: [INFO] Recursively applied owner/group %d:%d to "%s"',
+      TConsole.WriteLn(Format(
+        'chown: [INFO] Recursively applied owner/group %d:%d to "%s"',
         [Uid, Gid, TargetFile]))
     else
       TConsole.WriteLn('chown: [INFO] Operation completed successfully');
@@ -595,13 +608,15 @@ begin
   OldVal := Args[1];
   NewVal := Args[2];
 
-  TConsole.WriteLn(Format('[INFO] Replacing "%s" with "%s" in file "%s"...', [OldVal, NewVal, TargetFile]));
+  TConsole.WriteLn(Format('[INFO] Replacing "%s" with "%s" in file "%s"...',
+    [OldVal, NewVal, TargetFile]));
 
   MS := TMemoryStream.Create;
   try
     if qnx6_readFile(FFS, TargetFile, MS) <> 0 then
     begin
-      TConsole.WriteLn(Format('[ERROR] File "%s" not found or unreadable', [TargetFile]));
+      TConsole.WriteLn(Format('[ERROR] File "%s" not found or unreadable',
+        [TargetFile]));
       Exit(1);
     end;
 
@@ -616,7 +631,8 @@ begin
     end
     else
     begin
-      TConsole.WriteLn(Format('[NOTICE] Target string "%s" not found in "%s". File unchanged.',
+      TConsole.WriteLn(Format(
+        '[NOTICE] Target string "%s" not found in "%s". File unchanged.',
         [OldVal, TargetFile]));
     end;
 
@@ -674,7 +690,8 @@ begin
 
     if qnx6_readDir(FFS, PATH_APP_DETAILS, AppDetailsEntries) <> 0 then
     begin
-      TConsole.WriteLn(Format('[ERROR] Unable to read directory "%s"', [PATH_APP_DETAILS]));
+      TConsole.WriteLn(Format('[ERROR] Unable to read directory "%s"',
+        [PATH_APP_DETAILS]));
       Exit;
     end;
 
@@ -690,7 +707,8 @@ begin
 
     if qnx6_readDir(FFS, PATH_APPS, AppsEntries) = 0 then
     begin
-      TConsole.WriteLn(Format('[INFO] Starting application removal process for %d target(s)...',
+      TConsole.WriteLn(Format(
+        '[INFO] Starting application removal process for %d target(s)...',
         [BlackList.Count]));
       RegChanged := False;
 
@@ -725,7 +743,8 @@ begin
             FoundInApps := True;
             AppPath := PATH_APPS + '/' + AppsEntries[J].Name;
             if qnx6_RmDir(FFS, AppPath, True) then
-              TConsole.WriteLn(Format('[INFO] Removed "%s" from "%s"', [AppsEntries[J].Name, PATH_APPS]))
+              TConsole.WriteLn(Format('[INFO] Removed "%s" from "%s"',
+                [AppsEntries[J].Name, PATH_APPS]))
             else
               TConsole.WriteLn(Format('[ERROR] Failed to remove "%s" from "%s"',
                 [AppsEntries[J].Name, PATH_APPS]));
@@ -733,7 +752,8 @@ begin
         end;
 
         if not FoundInApps then
-          TConsole.WriteLn(Format('[NOTICE] Target "%s" not found in "%s"', [BlacklistedApp, PATH_APPS]));
+          TConsole.WriteLn(Format('[NOTICE] Target "%s" not found in "%s"',
+            [BlacklistedApp, PATH_APPS]));
       end;
 
       if RegChanged then
@@ -828,7 +848,8 @@ begin
         end
         else
         begin
-          TConsole.WriteLn(Format('rm: [ERROR] Cannot remove "%s": Directory or file removal failed',
+          TConsole.WriteLn(Format(
+            'rm: [ERROR] Cannot remove "%s": Directory or file removal failed',
             [ArgStr]));
           Inc(FailCount);
         end;
@@ -844,12 +865,14 @@ begin
         begin
           if qnx6_RmDir(FFS, ArgStr, False) then
           begin
-            TConsole.WriteLn(Format('rm: [INFO] Removed empty directory "%s"', [ArgStr]));
+            TConsole.WriteLn(Format('rm: [INFO] Removed empty directory "%s"',
+              [ArgStr]));
             Inc(SuccessCount);
           end
           else
           begin
-            TConsole.WriteLn(Format('rm: [ERROR] Cannot remove "%s": No such file or directory not empty',
+            TConsole.WriteLn(Format(
+              'rm: [ERROR] Cannot remove "%s": No such file or directory not empty',
               [ArgStr]));
             Inc(FailCount);
           end;

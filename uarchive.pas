@@ -94,7 +94,8 @@ type
   end;
 
 // Optimized compression/decompression functions
-function CompressStreamLzma(InStream, OutStream: TStream; const AOptions: TplLzmaOptions): longint;
+function CompressStreamLzma(InStream, OutStream: TStream;
+  const AOptions: TplLzmaOptions): longint;
 function DecompressStreamLzma(InStream, OutStream: TStream): int64;
 
 // Shared utility functions
@@ -169,7 +170,8 @@ end;
 {------------------------------}
 { Optimized LZMA Functions }
 
-function CompressStreamLzma(InStream, OutStream: TStream; const AOptions: TplLzmaOptions): longint;
+function CompressStreamLzma(InStream, OutStream: TStream;
+  const AOptions: TplLzmaOptions): longint;
 var
   encoder: TLZMAEncoder;
   xfilesize: int64;
@@ -186,10 +188,12 @@ begin
   try
     // Set encoder properties with error checking
     if not encoder.SetAlgorithm(AOptions.Algorithm) then
-      raise Exception.CreateFmt('Invalid compression algorithm: %d', [AOptions.Algorithm]);
+      raise Exception.CreateFmt('Invalid compression algorithm: %d',
+        [AOptions.Algorithm]);
 
     if not encoder.SetDictionarySize(AOptions.DictionarySize) then
-      raise Exception.CreateFmt('Invalid dictionary size: %d', [AOptions.DictionarySize]);
+      raise Exception.CreateFmt('Invalid dictionary size: %d',
+        [AOptions.DictionarySize]);
 
     if not encoder.SeNumFastBytes(AOptions.Fb) then
       raise Exception.CreateFmt('Invalid fast bytes value: %d', [AOptions.Fb]);
@@ -273,7 +277,8 @@ begin
   FBufferStream := TMemoryStream.Create;
 
   if not ReadHeader then
-    raise Exception.CreateFmt('Invalid archive format or corrupted header: %s', [ArchiveName]);
+    raise Exception.CreateFmt('Invalid archive format or corrupted header: %s',
+      [ArchiveName]);
 end;
 
 constructor TMyArcReader.Create(aStream: TStream);
@@ -409,7 +414,8 @@ begin
     raise Exception.CreateFmt('Entry index out of bounds: %d', [Index]);
 end;
 
-function TMyArcReader.ExtractToStream(const fileName: string; DestStream: TStream): boolean;
+function TMyArcReader.ExtractToStream(const fileName: string;
+  DestStream: TStream): boolean;
 var
   entry: TMyArcEntry;
   crc: cardinal;

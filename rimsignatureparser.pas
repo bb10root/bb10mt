@@ -54,7 +54,8 @@ const
   MAGIC_LOW = $C6B71C0E; // Little-Endian (0E 1C B7 C6)
   MAGIC_BASE = $D7C82D1F; // Little-Endian (1F 2D C8 D7)
 
-  MIN_SECTION_SIZE = SizeOf(TSectionHeader) + SizeOf(TSectionHeaderFooter); // 40 + 12 = 52
+  MIN_SECTION_SIZE = SizeOf(TSectionHeader) + SizeOf(TSectionHeaderFooter);
+  // 40 + 12 = 52
 
 {$INLINE ON}
 function IsValidMagic(const Magic: longword): boolean; inline;
@@ -75,14 +76,15 @@ begin
   if BufLen < (SizeOf(TSectionHeaderFooter) + 4) then
     Exit;
 
-  CurrEndPos := BufLen - 4; // Пропускаємо маркер/CRC32 контейнера
+  CurrEndPos := BufLen - 4;
+  // Пропускаємо маркер/CRC32 контейнера
 
   while CurrEndPos >= SizeOf(TSectionHeaderFooter) do
   begin
     SecFooter := PSectionHeaderFooter(PBuf + CurrEndPos - SizeOf(TSectionHeaderFooter));
 
-    if not IsValidMagic(SecFooter^.Magic) or (SecFooter^.TotalLength < MIN_SECTION_SIZE) or
-      (CurrEndPos < SecFooter^.TotalLength) then
+    if not IsValidMagic(SecFooter^.Magic) or (SecFooter^.TotalLength <
+      MIN_SECTION_SIZE) or (CurrEndPos < SecFooter^.TotalLength) then
       Break;
 
     CurrEndPos := CurrEndPos - SecFooter^.TotalLength;
@@ -92,7 +94,8 @@ begin
     Result := BufLen - CurrEndPos;
 end;
 
-function GetSignatureSectionsPtr(PBuf: pbyte; const BufLen: int64; BaseOffset: int64 = 0): TQNXSectionArray;
+function GetSignatureSectionsPtr(PBuf: pbyte; const BufLen: int64;
+  BaseOffset: int64 = 0): TQNXSectionArray;
 var
   CurrEndPos: int64;
   SecFooter: PSectionHeaderFooter;
@@ -106,15 +109,16 @@ begin
 
   CurrEndPos := BufLen - 4;
   Count := 0;
-  Capacity := 8; // Початковий резерв, щоб уникнути частих realloc
+  Capacity := 8;
+  // Початковий резерв, щоб уникнути частих realloc
   SetLength(Result, Capacity);
 
   while CurrEndPos >= SizeOf(TSectionHeaderFooter) do
   begin
     SecFooter := PSectionHeaderFooter(PBuf + CurrEndPos - SizeOf(TSectionHeaderFooter));
 
-    if not IsValidMagic(SecFooter^.Magic) or (SecFooter^.TotalLength < MIN_SECTION_SIZE) or
-      (CurrEndPos < SecFooter^.TotalLength) then
+    if not IsValidMagic(SecFooter^.Magic) or (SecFooter^.TotalLength <
+      MIN_SECTION_SIZE) or (CurrEndPos < SecFooter^.TotalLength) then
       Break;
 
     SecOffset := CurrEndPos - SecFooter^.TotalLength;

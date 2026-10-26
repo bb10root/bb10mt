@@ -89,7 +89,8 @@ type
     procedure Open;
     procedure InitializeBuffers;
 
-    function WriteStreamToFile(inStream: TStream; var inode: rcfs_inode; out hash: TSha256Digest): integer;
+    function WriteStreamToFile(inStream: TStream; var inode: rcfs_inode;
+      out hash: TSha256Digest): integer;
     function ReadFileData(inode: rcfs_inode): TBytes;
     function GetCachedString(off: dword): string;
     procedure AddStringToCache(off: dword; const Value: string);
@@ -107,7 +108,8 @@ type
 
     function inodeByOffset(off: dword): dword; inline;
     function getInodeByPath(const Path: string; var inode: rcfs_inode): dword;
-    function update_verifier(inodeIdx, packed_size: dword; const hash: TSha256Digest): integer;
+    function update_verifier(inodeIdx, packed_size: dword;
+      const hash: TSha256Digest): integer;
     function GetInode(idx: dword): rcfs_inode; inline;
     procedure SetInode(idx: dword; const aValue: rcfs_inode);
     function chmod(const dst: string; mode: integer): integer;
@@ -226,7 +228,8 @@ begin
   end;
 end;
 
-function TRCFS.WriteStreamToFile(inStream: TStream; var inode: rcfs_inode; out hash: TSha256Digest): integer;
+function TRCFS.WriteStreamToFile(inStream: TStream; var inode: rcfs_inode;
+  out hash: TSha256Digest): integer;
 var
   chunk_offsets: array of longword;
   chunk_buffer: array of byte;
@@ -271,13 +274,13 @@ begin
         if read_now <= 0 then Break;
 
         comp_size := Length(comp_buffer);
-        if lzo1x_999_compress(@chunk_buffer[0], read_now, @comp_buffer[0], comp_size,
-          @fWorkBuffer[0]) <> 0 then
+        if lzo1x_999_compress(@chunk_buffer[0], read_now, @comp_buffer[0],
+          comp_size, @fWorkBuffer[0]) <> 0 then
           Exit(-3);
 
         opt_size := read_now;
-        if lzo1x_optimize(@comp_buffer[0], comp_size, @chunk_buffer[0], opt_size,
-          @fWorkBuffer[0]) <> 0 then
+        if lzo1x_optimize(@comp_buffer[0], comp_size, @chunk_buffer[0],
+          opt_size, @fWorkBuffer[0]) <> 0 then
           Exit(-4);
 
         tempStream.WriteBuffer(comp_buffer[0], comp_size);
@@ -466,7 +469,8 @@ begin
   end;
 end;
 
-function TRCFS.update_verifier(inodeIdx, packed_size: dword; const hash: TSha256Digest): integer;
+function TRCFS.update_verifier(inodeIdx, packed_size: dword;
+  const hash: TSha256Digest): integer;
 var
   j: integer;
 begin
@@ -476,7 +480,8 @@ begin
   begin
     fVerData[j].packed_size := packed_size;
     Move(hash[0], fVerData[j].hash[0], SizeOf(TSha256Digest));
-    fStream.Position := fVerifierInode.offset + SizeOf(verifier_hdr) + j * SizeOf(verifier_item);
+    fStream.Position := fVerifierInode.offset + SizeOf(verifier_hdr) +
+      j * SizeOf(verifier_item);
     fStream.WriteBuffer(fVerData[j], SizeOf(verifier_item));
     Result := 0;
   end;

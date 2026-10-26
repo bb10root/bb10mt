@@ -13,7 +13,6 @@ uses
   uInfo,
   CLI.Interfaces,    // Core interfaces
   CLI.Command,       // Base command implementation
-  CLI.Parameter,     // Parameter handling
   CLI.Progress,      // Progress indicators
   CLI.Console;       // Colored console output
 
@@ -160,7 +159,8 @@ begin
       end
       else
       begin
-        if (TotalMultiByteCount > 10) and ((ValidUTF8Count * 100) div TotalMultiByteCount < 80) then
+        if (TotalMultiByteCount > 10) and ((ValidUTF8Count * 100) div
+          TotalMultiByteCount < 80) then
           Exit;
         Inc(I);
       end;
@@ -269,10 +269,12 @@ begin
     if (ListParam <> '') then
     begin
       ListParam := ExpandFileName(ListParam);
-      if FileExists(ListParam) and IsTextFile(ListParam) and (FileSize(ListParam) < 8192) then
+      if FileExists(ListParam) and IsTextFile(ListParam) and
+        (FileSize(ListParam) < 8192) then
         FL.LoadFromFile(ListParam)
       else if FileExists(ListParam) then
-        TConsole.WriteLn('Warning: list file looks like binary or too big (more than 8k). Skipping',
+        TConsole.WriteLn(
+          'Warning: list file looks like binary or too big (more than 8k). Skipping',
           ccYellow);
     end;
 
@@ -463,7 +465,8 @@ begin
   if not Assigned(RAM.Client.Loader) then Exit;
 
   TConsole.WriteLn('QNX Device Info:');
-  TConsole.WriteLn(Format('  PIN:                 %.8X', [QWord(RAM.Client.Loader.PIN)]));
+  TConsole.WriteLn(Format('  PIN:                 %.8X',
+    [QWord(RAM.Client.Loader.PIN)]));
   TConsole.WriteLn(Format('  BSN:                 %d', [uint64(RAM.Client.Loader.BSN)]));
   TConsole.WriteLn('');
 end;
@@ -489,14 +492,16 @@ begin
   with BRMetrics^ do
   begin
     TConsole.WriteLn(Format('Bootrom Version:   %d.%d.%d.%d',
-      [TFourInts(BR_ver)[3], TFourInts(BR_ver)[2], TFourInts(BR_ver)[1], TFourInts(BR_ver)[0]]));
+      [TFourInts(BR_ver)[3], TFourInts(BR_ver)[2], TFourInts(BR_ver)[1],
+      TFourInts(BR_ver)[0]]));
     TConsole.WriteLn(Format('  Hardware ID:         0x%.8X %s',
       [QWord(RAM.ModelID), ReadCString(HardwareName)]));
     TConsole.WriteLn(Format('  HW ID Override:    0x%.8X (OSTypes: 0x%.8X)',
       [QWord(HWID.ID), QWord(HWID.OS)]));
     TConsole.WriteLn(Format('  Hardware OS ID:    0x%.8X', [QWord(HWOSID)]));
     TConsole.WriteLn(Format('  BR ID:              0x%.8X', [QWord(BRID)]));
-    TConsole.WriteLn(Format('  Metrics Version:   %d.%d', [(version shr 16) and $FF, version and $FF]));
+    TConsole.WriteLn(Format('  Metrics Version:   %d.%d',
+      [(version shr 16) and $FF, version and $FF]));
     TConsole.WriteLn(Format('  Build Date:         %s', [ReadCString(BuildDate)]));
     TConsole.WriteLn(Format('  Build Time:         %s', [ReadCString(BuildTime)]));
     TConsole.WriteLn(Format('  Build User:         %s', [ReadCString(BuildUser)]));
@@ -634,7 +639,8 @@ begin
       TConsole.WriteLn(Format('  Flash ID:               NAND blocks 0-%d', [Blocks]));
       TConsole.WriteLn(Format('  Device ID:              0x%.2X', [DeviceID]));
       TConsole.WriteLn(Format('  Vendor ID:              0x%.2X', [VendorID]));
-      TConsole.WriteLn(Format('  Manufacturer Name:      %s', [EMMCVendorByID(VendorID)]));
+      TConsole.WriteLn(Format('  Manufacturer Name:      %s',
+        [EMMCVendorByID(VendorID)]));
       TConsole.WriteLn(Format('  Product Name:           %s', [ReadCString(Name)]));
       TConsole.WriteLn(Format('  Product Serial Number: 0x%.8X', [QWord(Serial)]));
       TConsole.WriteLn('  MMC Partition Info:');
@@ -672,7 +678,8 @@ begin
 
   TConsole.WriteLn('');
   TConsole.WriteLn('Branding:');
-  TConsole.WriteLn(Format('  ECID:               %d', [QWord(RAM.Client.Loader.VendorID)]));
+  TConsole.WriteLn(Format('  ECID:               %d',
+    [QWord(RAM.Client.Loader.VendorID)]));
 
   OsData := RAM.Client.Loader.OSMetrics;
   if Length(OsData) >= SizeOf(TOSMetrics) then
@@ -683,7 +690,8 @@ begin
       TConsole.WriteLn(Format('OS Version:          %s', [VersionToString(os_version)]));
       TConsole.WriteLn(Format('  Hardware ID:        0x%.8X %s',
         [QWord(hardware_id), ReadCString(device_string)]));
-      TConsole.WriteLn(Format('  Metrics Version:   %d.%d', [version shr 16, version and $FF]));
+      TConsole.WriteLn(Format('  Metrics Version:   %d.%d',
+        [version shr 16, version and $FF]));
       TConsole.WriteLn(Format('  Build Date:         %s', [ReadCString(build_date)]));
       TConsole.WriteLn(Format('  Build Time:         %s', [ReadCString(build_time)]));
       TConsole.WriteLn(Format('  Build User:         %s', [ReadCString(build_user)]));

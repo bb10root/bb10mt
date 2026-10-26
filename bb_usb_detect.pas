@@ -93,8 +93,8 @@ begin
     if (PhoneInt <= NetBase) or (PhoneInt >= Broadcast) then
       Exit;
 
-    Result := Format('%d.%d.%d.%d', [(PhoneInt shr 24) and $FF, (PhoneInt shr 16) and
-      $FF, (PhoneInt shr 8) and $FF, PhoneInt and $FF]);
+    Result := Format('%d.%d.%d.%d', [(PhoneInt shr 24) and $FF,
+      (PhoneInt shr 16) and $FF, (PhoneInt shr 8) and $FF, PhoneInt and $FF]);
   except
     Result := '';
   end;
@@ -138,8 +138,8 @@ begin
   end;
 end;
 
-procedure ProcessInterface(var Interfaces: TBBInterfaceList; const IfName, MAC: string;
-  const IPv4, IPv4Mask, IPv6: string);
+procedure ProcessInterface(var Interfaces: TBBInterfaceList;
+  const IfName, MAC: string; const IPv4, IPv4Mask, IPv6: string);
 var
   Idx, i: integer;
   Found: boolean;

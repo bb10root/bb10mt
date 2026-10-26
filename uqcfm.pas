@@ -342,7 +342,8 @@ initialization
   Split.AddPathParameter('-o', '--output', 'output dir');
 
   ALCreate := TALCreateCommand.Create('create', 'Create autoloader ');
-  ALCreate.AddPathParameter('-o', '--output', 'Autoloader file', False, 'autoloader.exe');
+  ALCreate.AddPathParameter('-o', '--output', 'Autoloader file',
+    False, 'autoloader.exe');
   ALCreate.AddPathParameter('-c', '--cap', 'cap.exe file', False, 'cap.exe');
   ALCreate.AddArrayParameter('-i', '--input', 'input files');
   ALCreate.AddPathParameter('-l', '--list', 'input files list');
@@ -352,7 +353,8 @@ initialization
   ALExtract.AddPathParameter('-i', '--input', 'Autoloader file', True);
   ALExtract.AddPathParameter('-c', '--cap', 'output file', False, 'cap.exe');
 
-  ALLoaders := TALLoadersCommand.Create('loaders', 'Extract RAM-loaders from CAP, CFP, autoloaders');
+  ALLoaders := TALLoadersCommand.Create('loaders',
+    'Extract RAM-loaders from CAP, CFP, autoloaders');
   ALLoaders.AddPathParameter('-i', '--input', 'cap.exe/cfp.exe file', True);
   ALLoaders.AddPathParameter('-o', '--output', 'output dir', False, 'ramloaders');
 

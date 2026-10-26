@@ -48,7 +48,8 @@ type
 
     procedure FreeBlocks(const Blocks: TDwordArray);
 
-    procedure LoadBlocks(var xBlocks: TQNX6_DB; level: DWord; size: QWord; var Blocks: TBlocksList);
+    procedure LoadBlocks(var xBlocks: TQNX6_DB; level: DWord;
+      size: QWord; var Blocks: TBlocksList);
 
     procedure SaveBlocks(var xBlocks: TQNX6_DB; var Blocks: TBlocksList);
 
@@ -56,9 +57,11 @@ type
 
     procedure SaveBlockData(var Blocks: TBlocksList; Data: Pointer; size: QWord);
 
-    function AddBlockToChain(var Blocks: TBlocksList; systemBlock: boolean = False): DWord;
+    function AddBlockToChain(var Blocks: TBlocksList;
+      systemBlock: boolean = False): DWord;
 
-    function RemoveBlockFromChain(var Blocks: TBlocksList; id: DWord; idx: integer = -1): TDwordArray;
+    function RemoveBlockFromChain(var Blocks: TBlocksList; id: DWord;
+      idx: integer = -1): TDwordArray;
 
     procedure Flush;
 
@@ -98,10 +101,12 @@ end;
 function TQNX6BlockManager.IsValidBlock(BlockNo: DWord): boolean;
 begin
   Result :=
-    (fDevice <> nil) and (fDevice.ActiveSB <> nil) and (BlockNo < fDevice.ActiveSB.NumBlocks);
+    (fDevice <> nil) and (fDevice.ActiveSB <> nil) and
+    (BlockNo < fDevice.ActiveSB.NumBlocks);
 end;
 
-function TQNX6BlockManager.IsAllocatableBlock(BlockNo: DWord; SystemBlock: boolean): boolean;
+function TQNX6BlockManager.IsAllocatableBlock(BlockNo: DWord;
+  SystemBlock: boolean): boolean;
 begin
   Result := IsValidBlock(BlockNo);
 
@@ -199,7 +204,8 @@ begin
   with fDevice.ActiveSB.RawData do
   begin
     fBitmap.Size := num_blocks;
-    bitmapSize := iceil(num_blocks, 8); // Точний розмір бітмапа у байтах
+    bitmapSize := iceil(num_blocks, 8);
+    // Точний розмір бітмапа у байтах
 
     LoadBlocks(bitmap.blocks, bitmap.indirect, bitmapSize, fBitmapBlocks);
     LoadBlockData(fBitmapBlocks, fBitmap.BitsPtr, bitmapSize);
@@ -320,7 +326,8 @@ begin
   end;
 end;
 
-function TQNX6BlockManager.AllocateBlocks(Count: integer; SystemBlock: boolean): TDwordArray;
+function TQNX6BlockManager.AllocateBlocks(Count: integer;
+  SystemBlock: boolean): TDwordArray;
 var
   BlockNo: DWord;
   Found: integer;
@@ -452,8 +459,8 @@ begin
   end;
 end;
 
-procedure TQNX6BlockManager.LoadBlocks(var xBlocks: TQNX6_DB; level: DWord; size: QWord;
-  var Blocks: TBlocksList);
+procedure TQNX6BlockManager.LoadBlocks(var xBlocks: TQNX6_DB; level: DWord;
+  size: QWord; var Blocks: TBlocksList);
 var
   TotalDataBlocks: QWord;
   PointersPerBlock: integer;
@@ -728,7 +735,8 @@ begin
   end;
 end;
 
-procedure TQNX6BlockManager.LoadBlockData(var Blocks: TBlocksList; Data: Pointer; size: QWord);
+procedure TQNX6BlockManager.LoadBlockData(var Blocks: TBlocksList;
+  Data: Pointer; size: QWord);
 var
   I: integer;
   BlockNo: DWord;
@@ -768,7 +776,8 @@ begin
   end;
 end;
 
-procedure TQNX6BlockManager.SaveBlockData(var Blocks: TBlocksList; Data: Pointer; size: QWord);
+procedure TQNX6BlockManager.SaveBlockData(var Blocks: TBlocksList;
+  Data: Pointer; size: QWord);
 var
   I: integer;
   BlockNo: DWord;
@@ -810,7 +819,8 @@ begin
   end;
 end;
 
-function TQNX6BlockManager.AddBlockToChain(var Blocks: TBlocksList; systemBlock: boolean): DWord;
+function TQNX6BlockManager.AddBlockToChain(var Blocks: TBlocksList;
+  systemBlock: boolean): DWord;
 var
   OldDataCount, NewDataCount: integer;
   NewTop, OldL1Count, OldL2Count: integer;
@@ -902,8 +912,8 @@ begin
   Result := DataBlock;
 end;
 
-function TQNX6BlockManager.RemoveBlockFromChain(var Blocks: TBlocksList; id: DWord;
-  idx: integer): TDwordArray;
+function TQNX6BlockManager.RemoveBlockFromChain(var Blocks: TBlocksList;
+  id: DWord; idx: integer): TDwordArray;
 var
   DataCount, I: integer;
   RemovedBlock: DWord;

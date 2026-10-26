@@ -42,7 +42,8 @@ function IsEmptyBlock(var Buf: TBytes; Size: integer): boolean;
 function IsFullFFBlock_Branchless(var Buf: TBytes; Size: integer): boolean;
 
 function TryStrToInt64AutoBase(const S: string; out Value: int64): boolean;
-function TryStrToInt64BaseManual(const S: string; Base: integer; out Value: int64): boolean;
+function TryStrToInt64BaseManual(const S: string; Base: integer;
+  out Value: int64): boolean;
 function TryCharToDigit(C: char; out D: integer): boolean;
 
 function CRC32_QNX(const Data: pbyte; Len: integer): cardinal; overload;
@@ -356,7 +357,8 @@ begin
   Result := D >= 0;
 end;
 
-function TryStrToInt64BaseManual(const S: string; Base: integer; out Value: int64): boolean;
+function TryStrToInt64BaseManual(const S: string; Base: integer;
+  out Value: int64): boolean;
 var
   i, D: integer;
   Negative: boolean;
@@ -652,7 +654,8 @@ begin
   p := Name;
   r := 0;
   for i := 0 to size - 1 do
-    r := Dword(((r shr 1) or (r shl 31)) + p^); // одразу обертання + додавання
+    r := Dword(((r shr 1) or (r shl 31)) + p^);
+  // одразу обертання + додавання
   Inc(p);
   Result := r;
 end;
@@ -813,7 +816,8 @@ begin
   {$ELSE}
   if fpstatfs(PChar(APath), @Stat) = 0 then
     Result := int64(Stat.bavail) * int64(Stat.bsize)
-  else if fpstatfs(PChar(ExtractFilePath(ExcludeTrailingPathDelimiter(APath))), @Stat) = 0 then
+  else if fpstatfs(PChar(ExtractFilePath(ExcludeTrailingPathDelimiter(APath))),
+    @Stat) = 0 then
     Result := int64(Stat.bavail) * int64(Stat.bsize);
   {$ENDIF}
 end;

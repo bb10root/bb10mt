@@ -1,10 +1,10 @@
 program bb10mt;
 {$mode objfpc}{$H+}
-{$ifdef MSWINDOWS} {$apptype CONSOLE} {$endif}
+{$ifdef MSWINDOWS}{$apptype CONSOLE}{$endif}
 {$DEFINE FPC_X64MM}
 {$DEFINE FPC_LIBCMM}
 uses
-  {$I mormot.uses.inc} // may include fpcx64mm or fpclibcmm
+  {$I mormot.uses.inc}// may include fpcx64mm or fpclibcmm
   Classes,
   SysUtils,
   CLI.Interfaces,    // Core interfaces

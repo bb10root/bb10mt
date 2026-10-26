@@ -7,7 +7,8 @@ interface
 uses
   Classes, SysUtils;
 
-procedure QNX6Mount(fileName, mountpoint: string; fg: boolean = False; dbg: boolean = False);
+procedure QNX6Mount(fileName, mountpoint: string; fg: boolean = False;
+  dbg: boolean = False);
 
 implementation
 
@@ -55,7 +56,8 @@ begin
 end;
 
 { Read the target of a symbolic link }
-function qnx6_readlink(const aName: pchar; aLinksToName: pchar; aLinksToNameSize: TSize): cint; cdecl;
+function qnx6_readlink(const aName: pchar; aLinksToName: pchar;
+  aLinksToNameSize: TSize): cint; cdecl;
 var
   idx: integer;
   blk, s, c, q: dword;
@@ -244,8 +246,8 @@ begin
 end;
 
 { Write data to an open file }
-function qnx6_write(const aName: pchar; const aBuffer: Pointer; aBufferSize: TSize;
-  aFileOffset: TOff; aFileInfo: PFuseFileInfo): cint; cdecl;
+function qnx6_write(const aName: pchar; const aBuffer: Pointer;
+  aBufferSize: TSize; aFileOffset: TOff; aFileInfo: PFuseFileInfo): cint; cdecl;
 var
   idx, c, i, i1, i2, numBlocks: integer;
   Buff: array of byte;
@@ -322,19 +324,22 @@ begin
 end;
 
 { Synchronize file contents }
-function qnx6_fsync(const aName: pchar; aDataSync: cint; aFileInfo: PFuseFileInfo): cint; cdecl;
+function qnx6_fsync(const aName: pchar; aDataSync: cint;
+  aFileInfo: PFuseFileInfo): cint; cdecl;
 begin
   FS.Flush;
   Result := 0;
 end;
 
 { Extended Attributes Stubs }
-function qnx6_setxattr(const aName, aKey, aValue: pchar; aValueSize: TSize; Flags: cint): cint; cdecl;
+function qnx6_setxattr(const aName, aKey, aValue: pchar; aValueSize: TSize;
+  Flags: cint): cint; cdecl;
 begin
   Result := 0;
 end;
 
-function qnx6_getxattr(const aName, aKey: pchar; aValue: pchar; aValueSize: TSize): cint; cdecl;
+function qnx6_getxattr(const aName, aKey: pchar; aValue: pchar;
+  aValueSize: TSize): cint; cdecl;
 begin
   Result := 0;
 end;
@@ -356,8 +361,8 @@ begin
 end;
 
 { Read directory }
-function qnx6_readdir(const aName: pchar; aBuffer: pointer; aFillDirFunc: TFuseFillDir;
-  aFileOffset: TOff; aFileInfo: PFuseFileInfo): cint; cdecl;
+function qnx6_readdir(const aName: pchar; aBuffer: pointer;
+  aFillDirFunc: TFuseFillDir; aFileOffset: TOff; aFileInfo: PFuseFileInfo): cint; cdecl;
 var
   i, c: integer;
   DE: TQNX6_ARawDirEntry;
@@ -388,7 +393,8 @@ begin
 end;
 
 { Synchronize directory contents }
-function qnx6_fsyncdir(const aName: pchar; aDataSync: integer; aFileInfo: PFuseFileInfo): cint; cdecl;
+function qnx6_fsyncdir(const aName: pchar; aDataSync: integer;
+  aFileInfo: PFuseFileInfo): cint; cdecl;
 begin
   FS.Flush;
   Result := 0;
@@ -414,26 +420,30 @@ begin
 end;
 
 { Create and open a file }
-function qnx6_create(const aName: pchar; aMode: TMode; aFileInfo: PFuseFileInfo): cint; cdecl;
+function qnx6_create(const aName: pchar; aMode: TMode;
+  aFileInfo: PFuseFileInfo): cint; cdecl;
 begin
   Result := FS.CreateFile(aName, aMode);
   if Result > 0 then Result := 0;
 end;
 
 { Change the size of an open file }
-function qnx6_ftruncate(const aName: pchar; aSize: TOff; aFileInfo: PFuseFileInfo): cint; cdecl;
+function qnx6_ftruncate(const aName: pchar; aSize: TOff;
+  aFileInfo: PFuseFileInfo): cint; cdecl;
 begin
   Result := 0;
 end;
 
 { Get attributes from an open file }
-function qnx6_fgetattr(const aName: pchar; aOutStat: PStat; PFileInfo: PFuseFileInfo): cint; cdecl;
+function qnx6_fgetattr(const aName: pchar; aOutStat: PStat;
+  PFileInfo: PFuseFileInfo): cint; cdecl;
 begin
   Result := 0;
 end;
 
 { Perform POSIX file locking operation }
-function qnx6_lock(const aName: pchar; aFileInfo: PFuseFileInfo; aCMD: cint; var aLock: FLock): cint; cdecl;
+function qnx6_lock(const aName: pchar; aFileInfo: PFuseFileInfo;
+  aCMD: cint; var aLock: FLock): cint; cdecl;
 begin
   Result := 0;
 end;
@@ -460,7 +470,8 @@ end;
 var
   qnx6_oper: TFuseOperations;
 
-procedure QNX6Mount(fileName, mountpoint: string; fg: boolean = False; dbg: boolean = False);
+procedure QNX6Mount(fileName, mountpoint: string; fg: boolean = False;
+  dbg: boolean = False);
 var
   fStream: TFileStream;
   _argv: array of pchar;

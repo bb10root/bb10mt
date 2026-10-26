@@ -16,22 +16,22 @@ const
     'RIM-RAMLoader',
     'RIM UPL',
     'RIM-BootNUKE'
-  );
+    );
 
-  CMD_PING              = $F000;
-  CMD_READ_METRICS      = $F001;
-  CMD_EXIT              = $F002;
-  CMD_FRESHNESS_SEAL    = $F003;
-  CMD_WRITE_RAM         = $F004;
-  CMD_EXECUTE_RAM       = $F005;
-  CMD_PASSWORD          = $F006;
-  CMD_CHANGE_BPS        = $F007;
-  CMD_DEVICE_NUKE       = $F008;
-  CMD_WRITE_RAM_SETUP   = $F009;
-  CMD_WRITE_RAM_VERIFY  = $F00A;
-  CMD_READ_MODEL_CODE   = $F00B;
-  CMD_X1                = $F00C;
-  CMD_X2                = $F00D;
+  CMD_PING = $F000;
+  CMD_READ_METRICS = $F001;
+  CMD_EXIT = $F002;
+  CMD_FRESHNESS_SEAL = $F003;
+  CMD_WRITE_RAM = $F004;
+  CMD_EXECUTE_RAM = $F005;
+  CMD_PASSWORD = $F006;
+  CMD_CHANGE_BPS = $F007;
+  CMD_DEVICE_NUKE = $F008;
+  CMD_WRITE_RAM_SETUP = $F009;
+  CMD_WRITE_RAM_VERIFY = $F00A;
+  CMD_READ_MODEL_CODE = $F00B;
+  CMD_X1 = $F00C;
+  CMD_X2 = $F00D;
 
 implementation
 

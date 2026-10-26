@@ -5,7 +5,7 @@ unit bbloaderstore;
 interface
 
 uses
-  Classes, SysUtils, IniFiles, FileUtil, LazFileUtils, uArchive, uMisc, bbdevicedb, CLI.Console;
+  Classes, SysUtils, IniFiles, uArchive;
 
 type
   TBBLoaderStore = class
@@ -23,7 +23,8 @@ type
     destructor Destroy; override;
 
     function IsValidLoader(const Data: TBytes; ModelID: cardinal): boolean;
-    function ForceLoader(const fName: string; var Data: TBytes; ModelID: cardinal): boolean;
+    function ForceLoader(const fName: string; var Data: TBytes;
+      ModelID: cardinal): boolean;
     function LoadLoader(ModelID: cardinal; var Data: TBytes): boolean;
     procedure GetUniqueLoaderList(List: TStringList);
     procedure UpdateLoaderMap(const LdrName: string; ModelID: cardinal);
@@ -33,7 +34,7 @@ type
 
 implementation
 
-uses RIMSignatureParser;
+uses FileUtil, LazFileUtils, RIMSignatureParser, bbdevicedb, CLI.Console, uMisc;
 
 constructor TBBLoaderStore.Create(const LdrDir: string);
 var
@@ -122,7 +123,8 @@ begin
   Result := FindLoaderResource(Format('%.8x', [int64(ModelID)]));
 end;
 
-function TBBLoaderStore.ForceLoader(const fName: string; var Data: TBytes; ModelID: cardinal): boolean;
+function TBBLoaderStore.ForceLoader(const fName: string; var Data: TBytes;
+  ModelID: cardinal): boolean;
 var
   iFile: TFileStream;
   s1: int64;
@@ -193,7 +195,8 @@ begin
         end;
       except
         on E: Exception do
-          TConsole.WriteLn(Format('Error reading loader %s: %s', [fName, E.Message]), ccRed);
+          TConsole.WriteLn(Format('Error reading loader %s: %s',
+            [fName, E.Message]), ccRed);
       end;
     end;
   finally
@@ -220,7 +223,8 @@ begin
     except
       on E: Exception do
       begin
-        TConsole.WriteLn(Format('Error loading resource %s: %s', [resName, E.Message]), ccRed);
+        TConsole.WriteLn(Format('Error loading resource %s: %s',
+          [resName, E.Message]), ccRed);
         SetLength(Data, 0);
       end;
     end;

@@ -17,14 +17,16 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Connect(const ProductIDs: array of word; TimeoutMS: integer = 5000): boolean;
+    function Connect(const ProductIDs: array of word;
+      TimeoutMS: integer = 5000): boolean;
     procedure Disconnect;
 
     // Перезавантаження з очікуванням повторного підключення
     function RebootAndReconnect(const TargetProductIDs: array of word;
       WaitDisconnectMS: integer = 3000; ReconnectTimeoutMS: integer = 10000): boolean;
 
-    function BootstrapLoader(addr: longword; LoaderData: TBytes; cb: TLoadCallback = nil): boolean;
+    function BootstrapLoader(addr: longword; LoaderData: TBytes;
+      cb: TLoadCallback = nil): boolean;
     function GetDeviceSummary(out PinHex: string; out ModelID: longword): boolean;
 
     property Device: TBBDevice read fDevice;
@@ -53,7 +55,8 @@ begin
   Result := Assigned(fDevice) and (fDevice.ID <> 0);
 end;
 
-function TBBClient.Connect(const ProductIDs: array of word; TimeoutMS: integer = 5000): boolean;
+function TBBClient.Connect(const ProductIDs: array of word;
+  TimeoutMS: integer = 5000): boolean;
 begin
   Result := fDevice.TryOpen(ProductIDs, TimeoutMS);
 end;
@@ -103,7 +106,8 @@ begin
     Result := Connect(TargetProductIDs, ReconnectTimeoutMS);
 end;
 
-function TBBClient.BootstrapLoader(addr: longword; LoaderData: TBytes; cb: TLoadCallback = nil): boolean;
+function TBBClient.BootstrapLoader(addr: longword; LoaderData: TBytes;
+  cb: TLoadCallback = nil): boolean;
 begin
   Result := False;
   if not IsConnected then Exit;

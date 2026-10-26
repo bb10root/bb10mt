@@ -6,10 +6,7 @@ interface
 
 uses
   Classes, SysUtils,
-  CLI.Command,
-  CLI.Interfaces,
-  CLI.Progress,
-  CLI.Console;
+  CLI.Command;
 
 type
   TBatchCommand = class(TBaseCommand)
@@ -22,7 +19,10 @@ var
 
 implementation
 
-uses uAutoloader, qcfm, FileUtil, scripthandler, StrUtils, uMisc, qnx6;
+uses uAutoloader, qcfm, FileUtil, scripthandler, StrUtils, uMisc, qnx6,
+  CLI.Interfaces,
+  CLI.Progress,
+  CLI.Console;
 
 var
   pb: IProgressIndicator = nil;
@@ -73,7 +73,6 @@ var
   qnx6: TQNX6Fs;
   inputSize, freeSpace: int64;
   checkPath: string;
-
 begin
   Result := 0;
   os_bundle := '';
@@ -117,7 +116,8 @@ begin
     TConsole.WriteLn(Format('Error: Insufficient disk space on target partition (%s).',
       [checkPath]), ccRed);
     TConsole.WriteLn(Format('Required: %d MB, Available: %d MB',
-      [(inputSize * REQUIRED_SPACE_RATIO) div (1024 * 1024), freeSpace div (1024 * 1024)]), ccRed);
+      [(inputSize * REQUIRED_SPACE_RATIO) div (1024 * 1024), freeSpace div
+      (1024 * 1024)]), ccRed);
     Exit(3);
   end;
   // ------------------------------------------------
@@ -139,12 +139,14 @@ begin
     end;
 
     if os_bundle <> '' then
-      TConsole.WriteLn(Format('OS Bundle: %s (%d bytes)', [os_bundle, FileSize(os_bundle)]))
+      TConsole.WriteLn(Format('OS Bundle: %s (%d bytes)',
+        [os_bundle, FileSize(os_bundle)]))
     else
       TConsole.WriteLn('OS Bundle not found!', ccRed);
 
     if radio_bundle <> '' then
-      TConsole.WriteLn(Format('Radio Bundle: %s (%d bytes)', [radio_bundle, FileSize(radio_bundle)]))
+      TConsole.WriteLn(Format('Radio Bundle: %s (%d bytes)',
+        [radio_bundle, FileSize(radio_bundle)]))
     else
       TConsole.WriteLn('Radio Bundle not found!', ccRed);
   finally
@@ -283,7 +285,8 @@ begin
   try
     files.Add(mfcqFile);
     TConsole.WriteLn('Packing files into OS autoloader...', ccCyan);
-    loaderFile := IncludeTrailingPathDelimiter(outDir) + ExtractFileName(ChangeFileExt(input, '_os.exe'));
+    loaderFile := IncludeTrailingPathDelimiter(outDir) +
+      ExtractFileName(ChangeFileExt(input, '_os.exe'));
 
     if not RebuildAutoloader(input, loaderFile, files) then
     begin
@@ -294,7 +297,8 @@ begin
     files.Clear;
     files.Add(radio_bundle);
     TConsole.WriteLn('Packing files into Radio autoloader...', ccCyan);
-    loaderFile := IncludeTrailingPathDelimiter(outDir) + ExtractFileName(ChangeFileExt(input, '_radio.exe'));
+    loaderFile := IncludeTrailingPathDelimiter(outDir) +
+      ExtractFileName(ChangeFileExt(input, '_radio.exe'));
     if not RebuildAutoloader(input, loaderFile, files) then
     begin
       TConsole.WriteLn('Error: Failed to build radio autoloader executable', ccRed);

@@ -20,9 +20,12 @@ type
   TPEAutoloaderFileInfoArray = array of TPEAutoloaderFileInfo;
 
   TPEAutoloaderHeaderInfo = record
-    HeaderVersion: integer;   // 1 (legacy / 52B delta) або 2 (з 80B padding / 132B delta)
-    SignaturePos: int64;    // Зміщення початку потрійної сигнатури
-    OffsetTablePos: int64;  // Зміщення масиву offsets (відразу після FileCount)
+    HeaderVersion: integer;
+    // 1 (legacy / 52B delta) або 2 (з 80B padding / 132B delta)
+    SignaturePos: int64;
+    // Зміщення початку потрійної сигнатури
+    OffsetTablePos: int64;
+    // Зміщення масиву offsets (відразу після FileCount)
     FileCount: integer;     // Кількість упакованих файлів
     Files: TPEAutoloaderFileInfoArray;
   end;
@@ -43,7 +46,8 @@ type
     FPosition: int64;
     FOwnsStream: boolean;
   public
-    constructor Create(SourceStream: TStream; AOffset, ASize: int64; AOwnsStream: boolean = False);
+    constructor Create(SourceStream: TStream; AOffset, ASize: int64;
+      AOwnsStream: boolean = False);
     destructor Destroy; override;
     function Read(var Buffer; Count: longint): longint; override;
     function Write(const Buffer; Count: longint): longint; override;
@@ -72,8 +76,10 @@ type
     procedure RemoveFile(Index: integer); overload;
     procedure RemoveFile(FileType: TFileType); overload;
 
-    procedure ReplaceFile(Index: integer; NewStream: TStream; AOwnsStream: boolean = False); overload;
-    procedure ReplaceFile(FileType: TFileType; NewStream: TStream; AOwnsStream: boolean = False); overload;
+    procedure ReplaceFile(Index: integer; NewStream: TStream;
+      AOwnsStream: boolean = False); overload;
+    procedure ReplaceFile(FileType: TFileType; NewStream: TStream;
+      AOwnsStream: boolean = False); overload;
     procedure ReplaceFile(FileType: TFileType; const NewFileName: string); overload;
 
     function Pack(const OutFileName: string = ''): boolean;
@@ -85,21 +91,26 @@ type
     property FileName: string read FFileName;
   end;
 
-function AnalyzePEAutoloaderHeader(SourceStream: TFileStream): TPEAutoloaderHeaderInfo; overload;
-function AnalyzePEAutoloaderHeader(const FileName: string): TPEAutoloaderHeaderInfo; overload;
+function AnalyzePEAutoloaderHeader(SourceStream: TFileStream): TPEAutoloaderHeaderInfo;
+  overload;
+function AnalyzePEAutoloaderHeader(const FileName: string): TPEAutoloaderHeaderInfo;
+  overload;
 
-function AnalyzePEAutoloaderFiles(SourceStream: TFileStream): TPEAutoloaderFileInfoArray; overload;
-function AnalyzePEAutoloaderFiles(const FileName: string): TPEAutoloaderFileInfoArray; overload;
+function AnalyzePEAutoloaderFiles(SourceStream: TFileStream): TPEAutoloaderFileInfoArray;
+  overload;
+function AnalyzePEAutoloaderFiles(const FileName: string): TPEAutoloaderFileInfoArray;
+  overload;
 
-procedure ExtractBlackBerryAutoloaderFromPE(const FileName: string; const OutDir: string = '');
-procedure ExtractPEAutoloaderFiles(const FileName: string; const Files: TPEAutoloaderFileInfoArray;
+procedure ExtractBlackBerryAutoloaderFromPE(const FileName: string;
   const OutDir: string = '');
+procedure ExtractPEAutoloaderFiles(const FileName: string;
+  const Files: TPEAutoloaderFileInfoArray; const OutDir: string = '');
 
-function MakeAutoloader(oFile: string; const iFiles: TStringList; capexe: string = 'cap.exe';
-  ver: integer = 2; cb: TProgressCallback = nil): boolean;
+function MakeAutoloader(oFile: string; const iFiles: TStringList;
+  capexe: string = 'cap.exe'; ver: integer = 2; cb: TProgressCallback = nil): boolean;
 
-function RebuildAutoloader(const OriginalPE, OutFile: string; const NewFiles: TStringList;
-  cb: TProgressCallback = nil): boolean;
+function RebuildAutoloader(const OriginalPE, OutFile: string;
+  const NewFiles: TStringList; cb: TProgressCallback = nil): boolean;
 
 function ExtractCap(inFile, outFile: string): boolean;
 
@@ -115,7 +126,8 @@ const
 
   { TAutoloaderFileStream }
 
-constructor TAutoloaderFileStream.Create(SourceStream: TStream; AOffset, ASize: int64; AOwnsStream: boolean);
+constructor TAutoloaderFileStream.Create(SourceStream: TStream;
+  AOffset, ASize: int64; AOwnsStream: boolean);
 begin
   inherited Create;
   FSourceStream := SourceStream;
@@ -280,7 +292,8 @@ begin
     raise Exception.Create('File type not found for removal');
 end;
 
-procedure TAutoloaderReader.ReplaceFile(Index: integer; NewStream: TStream; AOwnsStream: boolean);
+procedure TAutoloaderReader.ReplaceFile(Index: integer; NewStream: TStream;
+  AOwnsStream: boolean);
 begin
   if (Index < 0) or (Index >= Length(FHeaderInfo.Files)) then
     raise Exception.CreateFmt('Invalid file index: %d', [Index]);
@@ -294,7 +307,8 @@ begin
   FPendingRemovals[Index] := False;
 end;
 
-procedure TAutoloaderReader.ReplaceFile(FileType: TFileType; NewStream: TStream; AOwnsStream: boolean);
+procedure TAutoloaderReader.ReplaceFile(FileType: TFileType;
+  NewStream: TStream; AOwnsStream: boolean);
 var
   I: integer;
 begin
@@ -427,7 +441,8 @@ end;
 
 { Helper Functions }
 
-function ReadHeaderMetadata(Stream: TStream; var OutVersion: integer; var OutOffsetTablePos: int64): int64;
+function ReadHeaderMetadata(Stream: TStream; var OutVersion: integer;
+  var OutOffsetTablePos: int64): int64;
 var
   FileCountVal: QWord;
   SigBasePos: int64;
@@ -560,7 +575,8 @@ begin
   Result.SignaturePos := SignaturePos - 12;
   SourceStream.Position := SignaturePos;
 
-  FileCount := ReadHeaderMetadata(SourceStream, Result.HeaderVersion, Result.OffsetTablePos);
+  FileCount := ReadHeaderMetadata(SourceStream, Result.HeaderVersion,
+    Result.OffsetTablePos);
   Result.FileCount := FileCount;
 
   SetLength(Offsets, FileCount + 1);
@@ -612,8 +628,8 @@ begin
   Result := AnalyzePEAutoloaderHeader(FileName).Files;
 end;
 
-procedure ExtractPEAutoloaderFiles(const FileName: string; const Files: TPEAutoloaderFileInfoArray;
-  const OutDir: string = '');
+procedure ExtractPEAutoloaderFiles(const FileName: string;
+  const Files: TPEAutoloaderFileInfoArray; const OutDir: string = '');
 var
   SourceStream, OutputFile: TFileStream;
   BaseFileName, TargetDir, OutputFileName: string;
@@ -632,13 +648,15 @@ begin
 
   SourceStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
-    Writeln(Format('Extracting %d files from %s...', [Length(Files), ExtractFileName(FileName)]));
+    Writeln(Format('Extracting %d files from %s...',
+      [Length(Files), ExtractFileName(FileName)]));
 
     for I := 0 to High(Files) do
     begin
       if Files[I].Size <= 0 then
       begin
-        Writeln(Format('Skipping file %d: invalid size (%d)', [Files[I].Index, Files[I].Size]));
+        Writeln(Format('Skipping file %d: invalid size (%d)',
+          [Files[I].Index, Files[I].Size]));
         Continue;
       end;
 
@@ -651,8 +669,8 @@ begin
       OutputFile := TFileStream.Create(OutputFileName, fmCreate);
       try
         OutputFile.CopyFrom(SourceStream, Files[I].Size);
-        Writeln(Format('Extracted: %s (%s bytes)', [ExtractFileName(OutputFileName),
-          FormatFloat('#,##0', Files[I].Size)]));
+        Writeln(Format('Extracted: %s (%s bytes)',
+          [ExtractFileName(OutputFileName), FormatFloat('#,##0', Files[I].Size)]));
       finally
         OutputFile.Free;
       end;
@@ -664,7 +682,8 @@ begin
   end;
 end;
 
-procedure ExtractBlackBerryAutoloaderFromPE(const FileName: string; const OutDir: string = '');
+procedure ExtractBlackBerryAutoloaderFromPE(const FileName: string;
+  const OutDir: string = '');
 var
   hdr: TPEAutoloaderHeaderInfo;
 begin
@@ -709,8 +728,8 @@ begin
   end;
 end;
 
-function MakeAutoloader(oFile: string; const iFiles: TStringList; capexe: string = 'cap.exe';
-  ver: integer = 2; cb: TProgressCallback = nil): boolean;
+function MakeAutoloader(oFile: string; const iFiles: TStringList;
+  capexe: string = 'cap.exe'; ver: integer = 2; cb: TProgressCallback = nil): boolean;
 var
   inStream, outStream, cap: TFileStream;
   off, capSize, xDelta: int64;
@@ -782,8 +801,8 @@ begin
   end;
 end;
 
-function RebuildAutoloader(const OriginalPE, OutFile: string; const NewFiles: TStringList;
-  cb: TProgressCallback = nil): boolean;
+function RebuildAutoloader(const OriginalPE, OutFile: string;
+  const NewFiles: TStringList; cb: TProgressCallback = nil): boolean;
 var
   OrigStream, OutStream, InStream: TFileStream;
   HdrInfo: TPEAutoloaderHeaderInfo;
@@ -798,11 +817,13 @@ begin
 
   FileCount := NewFiles.Count;
   if (FileCount < 1) or (FileCount > MAX_FILES) then
-    raise Exception.CreateFmt('Invalid file count for new autoloader: %d (max %d)', [FileCount, MAX_FILES]);
+    raise Exception.CreateFmt('Invalid file count for new autoloader: %d (max %d)',
+      [FileCount, MAX_FILES]);
 
   HdrInfo := AnalyzePEAutoloaderHeader(OriginalPE);
   if Length(HdrInfo.Files) = 0 then
-    raise Exception.Create('Original autoloader contains no files to calculate data offset');
+    raise Exception.Create(
+      'Original autoloader contains no files to calculate data offset');
 
   FirstFileOffset := HdrInfo.Files[0].Offset;
 
@@ -826,7 +847,8 @@ begin
 
       CurrentTablePos := OutStream.Position;
       if CurrentTablePos > FirstFileOffset then
-        raise Exception.Create('New file offset table exceeds original header boundaries');
+        raise Exception.Create(
+          'New file offset table exceeds original header boundaries');
 
       while OutStream.Position < FirstFileOffset do
         OutStream.WriteDWord(0);

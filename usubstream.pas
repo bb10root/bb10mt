@@ -6,21 +6,22 @@ interface
 
 uses
   Classes, SysUtils;
-  type
+
+type
   TSubStream = class(TStream)
   private
     FBaseStream: TStream;
-    FOffset: Int64;
-    FSize: Int64;
-    FPosition: Int64;
+    FOffset: int64;
+    FSize: int64;
+    FPosition: int64;
   public
-    constructor Create(ABaseStream: TStream; AOffset, ASize: Int64);
+    constructor Create(ABaseStream: TStream; AOffset, ASize: int64);
 
-    function Read(var Buffer; Count: Longint): Longint; override;
-    function Write(const Buffer; Count: Longint): Longint; override;
-    function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
-    function GetSize: Int64; override;
-    function GetPosition: Int64; override;
+    function Read(var Buffer; Count: longint): longint; override;
+    function Write(const Buffer; Count: longint): longint; override;
+    function Seek(const Offset: int64; Origin: TSeekOrigin): int64; override;
+    function GetSize: int64; override;
+    function GetPosition: int64; override;
   end;
 
 
@@ -28,7 +29,7 @@ implementation
 
 { ---------- Implementation ---------- }
 
-constructor TSubStream.Create(ABaseStream: TStream; AOffset, ASize: Int64);
+constructor TSubStream.Create(ABaseStream: TStream; AOffset, ASize: int64);
 begin
   inherited Create;
   if not Assigned(ABaseStream) then
@@ -47,7 +48,7 @@ begin
     raise Exception.Create('Substream exceeds base stream size');
 end;
 
-function TSubStream.Read(var Buffer; Count: Longint): Longint;
+function TSubStream.Read(var Buffer; Count: longint): longint;
 begin
   if FPosition >= FSize then
     Exit(0); // кінець підпотоку
@@ -60,7 +61,7 @@ begin
   Inc(FPosition, Result);
 end;
 
-function TSubStream.Write(const Buffer; Count: Longint): Longint;
+function TSubStream.Write(const Buffer; Count: longint): longint;
 begin
   if FPosition >= FSize then
     raise Exception.Create('Cannot write beyond substream boundary');
@@ -73,7 +74,7 @@ begin
   Inc(FPosition, Result);
 end;
 
-function TSubStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
+function TSubStream.Seek(const Offset: int64; Origin: TSeekOrigin): int64;
 begin
   case Origin of
     soBeginning: FPosition := Offset;
@@ -87,16 +88,15 @@ begin
   Result := FPosition;
 end;
 
-function TSubStream.GetSize: Int64;
+function TSubStream.GetSize: int64;
 begin
   Result := FSize;
 end;
 
-function TSubStream.GetPosition: Int64;
+function TSubStream.GetPosition: int64;
 begin
   Result := FPosition;
 end;
 
 
 end.
-

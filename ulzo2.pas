@@ -16,14 +16,18 @@ var
   int1, int2, int3, int4, int5, int6, int7, int8, int9: integer): integer;
   {$ifdef windows}stdcall{$else} cdecl{$endif};
   lzo_version: function(): cardinal; {$ifdef windows}stdcall{$else} cdecl{$endif};
-  lzo1x_1_compress: function(src: Pointer; src_len: longword; dest: Pointer;
-  var dest_len: longword; wrkmem: Pointer): integer; {$ifdef windows}stdcall{$else} cdecl{$endif};
-  lzo1x_999_compress: function(src: Pointer; src_len: longword; dest: Pointer;
-  var dest_len: longword; wrkmem: Pointer): integer; {$ifdef windows}stdcall{$else} cdecl{$endif};
-  lzo1x_decompress_safe: function(src: Pointer; src_len: longword; dest: Pointer;
-  var dest_len: longword; wrkmem: Pointer): integer; {$ifdef windows}stdcall{$else} cdecl{$endif};
+  lzo1x_1_compress: function(src: Pointer; src_len: longword;
+  dest: Pointer; var dest_len: longword; wrkmem: Pointer): integer;
+  {$ifdef windows}stdcall{$else} cdecl{$endif};
+  lzo1x_999_compress: function(src: Pointer; src_len: longword;
+  dest: Pointer; var dest_len: longword; wrkmem: Pointer): integer;
+  {$ifdef windows}stdcall{$else} cdecl{$endif};
+  lzo1x_decompress_safe: function(src: Pointer; src_len: longword;
+  dest: Pointer; var dest_len: longword; wrkmem: Pointer): integer;
+  {$ifdef windows}stdcall{$else} cdecl{$endif};
   lzo1x_optimize: function(src: Pointer; src_len: longword; dest: Pointer;
-  var dest_len: longword; wrkmem: Pointer): integer; {$ifdef windows}stdcall{$else} cdecl{$endif};
+  var dest_len: longword; wrkmem: Pointer): integer;
+  {$ifdef windows}stdcall{$else} cdecl{$endif};
 
 
 implementation
@@ -52,7 +56,8 @@ begin
   pointer(__lzo_init_v2) := GetProcedureAddress(dllHandle, '__lzo_init_v2');
   pointer(lzo1x_1_compress) := GetProcedureAddress(dllHandle, 'lzo1x_1_compress');
   pointer(lzo1x_999_compress) := GetProcedureAddress(dllHandle, 'lzo1x_999_compress');
-  pointer(lzo1x_decompress_safe) := GetProcedureAddress(dllHandle, 'lzo1x_decompress_safe');
+  pointer(lzo1x_decompress_safe) :=
+    GetProcedureAddress(dllHandle, 'lzo1x_decompress_safe');
   pointer(lzo1x_optimize) := GetProcedureAddress(dllHandle, 'lzo1x_optimize');
   ver := lzo_version();
   res := __lzo_init_v2(ver, -1, -1, -1, -1, -1, -1, -1, -1, -1);

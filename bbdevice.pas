@@ -5,7 +5,7 @@ unit bbdevice;
 interface
 
 uses
-  Classes, SysUtils, Math, bbconst, bbtransport, uCrypto;
+  Classes, SysUtils, bbconst, bbtransport;
 
 type
   TBBDevice = class(TBBTransport)
@@ -29,7 +29,8 @@ type
 
 implementation
 
-{ TBBDevice }
+uses Math, uCrypto;
+  { TBBDevice }
 
 function TBBDevice.SetMode(fmode: byte): boolean;
 var
@@ -142,8 +143,8 @@ begin
   end;
 end;
 
-procedure TBBDevice.SendLoader(addr: longword; Loader: TBytes; chunkSize: integer = 2044;
-  cb: TLoadCallback = nil);
+procedure TBBDevice.SendLoader(addr: longword; Loader: TBytes;
+  chunkSize: integer = 2044; cb: TLoadCallback = nil);
 var
   pkt, Data: TBytes;
   p, i, s, size: integer;

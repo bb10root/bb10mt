@@ -164,8 +164,8 @@ begin
 
   if FFS.Device.BlockSize = 0 then Exit(0);
 
-  maxBlock := Min(FFS.BlockMgr.Bitmap.Size, DWord((FFS.Device.Stream.Size - FFS.Device.DataStart) div
-    FFS.Device.BlockSize));
+  maxBlock := Min(FFS.BlockMgr.Bitmap.Size, DWord(
+    (FFS.Device.Stream.Size - FFS.Device.DataStart) div FFS.Device.BlockSize));
 
   FirstFreePos := FFS.Device.UserAreaStart;
   LastUsedPos := maxBlock - 1;
@@ -175,7 +175,8 @@ begin
 
   if lu <= ff then
   begin
-    FFS.Device.Stream.Size := FFS.Device.DataStart + QWord(lu + 1) * FFS.Device.BlockSize;
+    FFS.Device.Stream.Size := FFS.Device.DataStart + QWord(lu + 1) *
+      FFS.Device.BlockSize;
     Exit(0);
   end;
 
@@ -232,7 +233,8 @@ begin
       FFS.InodeMgr.Flush;
       FFS.BlockMgr.Flush;
       FFS.Device.Flush;
-      FFS.Device.Stream.Size := FFS.Device.DataStart + QWord(ff + 1) * FFS.Device.BlockSize;
+      FFS.Device.Stream.Size :=
+        FFS.Device.DataStart + QWord(ff + 1) * FFS.Device.BlockSize;
     end;
   finally
     fromBlocks.Free;
@@ -350,7 +352,8 @@ begin
     for i := 0 to High(tempBuffer) do
     begin
       FFS.InodeMgr.SetInode(tempBuffer[i].NewIdx, tempBuffer[i].Inode);
-      FFS.InodeMgr.SaveInodeBlocks(tempBuffer[i].NewIdx, tempBuffer[i].Inode.size, tempBuffer[i].Blocks);
+      FFS.InodeMgr.SaveInodeBlocks(tempBuffer[i].NewIdx, tempBuffer[i].Inode.size,
+        tempBuffer[i].Blocks);
     end;
 
     // 6. Оновлюємо список використаних inodes

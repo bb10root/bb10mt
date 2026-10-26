@@ -63,12 +63,13 @@ type
     function FindChild(ANode: PPathTrieNode; ASegment: pchar;
       ASegmentLen: integer; out AIndex: integer): boolean; inline;
 
-    function AddChild(ANode: PPathTrieNode; ASegment: pchar; ASegmentLen: integer;
-      AIndex: integer): PPathTrieNode;
+    function AddChild(ANode: PPathTrieNode; ASegment: pchar;
+      ASegmentLen: integer; AIndex: integer): PPathTrieNode;
 
     procedure DeleteChild(ANode: PPathTrieNode; AIndex: integer);
 
-    class procedure NormalizeRange(const APath: string; out AStart, AEnd: pchar); static; inline;
+    class procedure NormalizeRange(const APath: string; out AStart, AEnd: pchar);
+      static; inline;
 
     class function NextSegment(var P: pchar; AEnd: pchar; out ASegStart: pchar;
       out ASegLen: integer): boolean; static; inline;
@@ -100,7 +101,8 @@ const
   { Path parsing                                                               }
   { -------------------------------------------------------------------------- }
 
-class procedure TPathTrieCache.NormalizeRange(const APath: string; out AStart, AEnd: pchar);
+class procedure TPathTrieCache.NormalizeRange(const APath: string;
+  out AStart, AEnd: pchar);
 begin
   AStart := PChar(APath);
   AEnd := AStart + Length(APath);
@@ -109,8 +111,8 @@ begin
     Dec(AEnd);
 end;
 
-class function TPathTrieCache.NextSegment(var P: pchar; AEnd: pchar; out ASegStart: pchar;
-  out ASegLen: integer): boolean;
+class function TPathTrieCache.NextSegment(var P: pchar; AEnd: pchar;
+  out ASegStart: pchar; out ASegLen: integer): boolean;
 begin
   while (P < AEnd) and (P^ = '/') do
     Inc(P);
@@ -132,7 +134,8 @@ end;
 { Node allocator                                                             }
 { -------------------------------------------------------------------------- }
 
-function TPathTrieCache.NewNode(AParent: PPathTrieNode; AParentIndex: integer): PPathTrieNode;
+function TPathTrieCache.NewNode(AParent: PPathTrieNode;
+  AParentIndex: integer): PPathTrieNode;
 var
   NewChunk: PChunkBlock;
 begin
@@ -580,8 +583,8 @@ end;
 { Longest prefix                                                             }
 { -------------------------------------------------------------------------- }
 
-function TPathTrieCache.TryGetLongestPrefix(const APath: string; out AFoundPath: string;
-  out AInode: DWord): boolean;
+function TPathTrieCache.TryGetLongestPrefix(const APath: string;
+  out AFoundPath: string; out AInode: DWord): boolean;
 var
   P, PEnd: pchar;
   SegStart: pchar;

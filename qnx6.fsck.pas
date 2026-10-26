@@ -165,7 +165,8 @@ begin
             begin
               Name := FFS.RawDirEntryGetName(DE[j]);
               if not FFS.InodeMgr.IsValidInode(DE[j].inode) then
-                Errors.Add(Format('Directory inode #%d references invalid inode %d ("%s")',
+                Errors.Add(Format(
+                  'Directory inode #%d references invalid inode %d ("%s")',
                   [i, DE[j].inode, Name]))
               else
               begin
@@ -173,24 +174,31 @@ begin
                 if Name = '..' then HasDotDot := True;
 
                 if Copy(Name, 1, 8) = 'DAMAGED ' then
-                  Errors.Add(Format('Directory #%d contains entry "%s" pointing to unallocated inode %d',
-                    [i, Name, DE[j].inode]))
+                  Errors.Add(Format(
+                    'Directory #%d contains entry "%s" pointing to unallocated inode %d',
+                    [
+                    i, Name, DE[j].inode]))
                 else if not FFS.InodeMgr.UsedInodesList.Contains(DE[j].inode) then
-                  Errors.Add(Format('Directory #%d contains entry "%s" pointing to unallocated inode %d',
-                    [i, Name, DE[j].inode]))
+                  Errors.Add(Format(
+                    'Directory #%d contains entry "%s" pointing to unallocated inode %d',
+                    [
+                    i, Name, DE[j].inode]))
                 else
                 begin
                   target := FFS.InodeMgr.GetInode(DE[j].inode);
                   if target.mode = 0 then
-                    Errors.Add(Format('Directory #%d entry "%s" points to cleared inode #%d (mode = 0)',
+                    Errors.Add(
+                      Format('Directory #%d entry "%s" points to cleared inode #%d (mode = 0)',
                       [i, Name, DE[j].inode]));
 
                   if (Name = '.') and (DE[j].inode <> i) then
-                    Errors.Add(Format('Directory #%d: "." entry points to inode #%d instead of self',
+                    Errors.Add(
+                      Format('Directory #%d: "." entry points to inode #%d instead of self',
                       [i, DE[j].inode]));
 
                   if (Name = '..') and (i = 1) and (DE[j].inode <> 1) then
-                    Errors.Add(Format('Root directory ".." must point to itself (inode 1), got %d',
+                    Errors.Add(
+                      Format('Root directory ".." must point to itself (inode 1), got %d',
                       [DE[j].inode]));
                 end;
               end;
@@ -203,7 +211,8 @@ begin
             end;
 
           if not HasDot then Errors.Add(Format('Directory #%d missing "." entry', [i]));
-          if not HasDotDot then Errors.Add(Format('Directory #%d missing ".." entry', [i]));
+          if not HasDotDot then
+            Errors.Add(Format('Directory #%d missing ".." entry', [i]));
         finally
           // Звільнення динамічного масиву записів каталогу (запобігає витоку RAM)
           SetLength(DE, 0);
@@ -220,7 +229,8 @@ begin
       begin
         if Inode.nlink <> actualNlink then
         begin
-          Errors.Add(Format('Inode #%d: nlink=%d, actual references=%d', [i, Inode.nlink, actualNlink]));
+          Errors.Add(Format('Inode #%d: nlink=%d, actual references=%d',
+            [i, Inode.nlink, actualNlink]));
           if Fix then
           begin
             Inode.nlink := actualNlink;
@@ -230,7 +240,8 @@ begin
       end
       else if Inode.nlink > 0 then
       begin
-        Errors.Add(Format('Inode #%d: has nlink=%d but no directory references (orphan)', [i, Inode.nlink]));
+        Errors.Add(Format('Inode #%d: has nlink=%d but no directory references (orphan)',
+          [i, Inode.nlink]));
         if Fix then
         begin
           if eraseCount >= Length(toEraseInodes) then
@@ -258,7 +269,8 @@ begin
     begin
       if FFS.BlockMgr.Bitmap.Bits[i] and (not claimedBlocks[i]) then
       begin
-        Errors.Add(Format('Block %d is marked used in bitmap but not referenced by any inode', [i]));
+        Errors.Add(Format(
+          'Block %d is marked used in bitmap but not referenced by any inode', [i]));
         if Fix then FFS.BlockMgr.Bitmap.Clear(i);
       end;
 
@@ -274,13 +286,16 @@ begin
         end;
         {$ENDIF}
 
-        Errors.Add(Format('Block %d is referenced by inodes but not marked used in bitmap', [i]));
+        Errors.Add(Format(
+          'Block %d is referenced by inodes but not marked used in bitmap',
+          [i]));
         if Fix then FFS.BlockMgr.Bitmap.SetOn(i);
       end;
     end;
 
     ImageSize := FFS.Device.Stream.Size;
-    TConsole.WriteLn(Format('-> Total file data size: %.2f MB', [TotalFileSize / (1024 * 1024)]));
+    TConsole.WriteLn(Format('-> Total file data size: %.2f MB',
+      [TotalFileSize / (1024 * 1024)]));
     TConsole.WriteLn(Format('-> Image file size: %.2f MB', [ImageSize / (1024 * 1024)]));
 
     if Fix and (Errors.Count > 0) then

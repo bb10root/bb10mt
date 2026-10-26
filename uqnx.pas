@@ -139,10 +139,10 @@ begin
   if debloat then
   begin
     if not GetParameterValue('--blacklist', bList) then
-      bList := 'com.twitter com.evernote com.linkedin com.tcs.maps com.rim.bb.app.facebook ' +
-        'com.rim.bb.app.retaildemoshim sys.socialconnect.linkedin sys.socialconnect.twitter ' +
-        'sys.socialconnect.youtube sys.socialconnect.facebook sys.cfs.box sys.cfs.dropbox ' +
-        'sys.uri.youtube sys.weather sys.appworld ' + 'sys.bbm';
+      bList := 'com.twitter com.evernote com.linkedin com.tcs.maps com.rim.bb.app.facebook '
+        + 'com.rim.bb.app.retaildemoshim sys.socialconnect.linkedin sys.socialconnect.twitter '
+        + 'sys.socialconnect.youtube sys.socialconnect.facebook sys.cfs.box sys.cfs.dropbox '
+        + 'sys.uri.youtube sys.weather sys.appworld ' + 'sys.bbm';
 
     blackList := TStringList.Create;
     blackList.AddDelimitedText(bList, ' ', True);
@@ -331,7 +331,8 @@ initialization
   mkFs.AddPathParameter('-i', '--image', 'QNX6FS image file', True);
   mkFs.AddIntegerParameter('-b', '--blocks', 'Blocks count', False, '10240');
   mkFs.AddIntegerParameter('-n', '--inodes', 'Inodes count', False, '1024');
-  mkFs.AddIntegerParameter('-s', '--block-size', 'Block Size (multiple of 512)', False, '4096');
+  mkFs.AddIntegerParameter('-s', '--block-size', 'Block Size (multiple of 512)',
+    False, '4096');
 
   {$IFDEF LINUX}
   Mnt := TMountCommand.Create('mount', 'mount QNX image');

@@ -93,7 +93,8 @@ type
   end;
 
 function ParseMCTStream(Stream: TStream): TMCTParsed;
-procedure ExtractMCTPartitionsToFiles(Stream: TStream; const Parsed: TMCTParsed; const DestDir: string);
+procedure ExtractMCTPartitionsToFiles(Stream: TStream; const Parsed: TMCTParsed;
+  const DestDir: string);
 procedure RunExtract(const DumpFile: string; const OutDir: string; Offset: int64 = 0);
 procedure ParseAndShowMCT(const FileName: string);
 procedure ShowParsedMCT(const Parsed: TMCTParsed; Actual: boolean = False);
@@ -299,8 +300,8 @@ procedure ShowParsedMCT(const Parsed: TMCTParsed; Actual: boolean = False);
 
   function BlocksToStrTotal(const Entry: TMCTRange): string;
   begin
-    Result := Format('blocks %d-%d, total: %d', [Entry.StartBlock, Entry.EndBlock,
-      Entry.EndBlock - Entry.StartBlock + 1]);
+    Result := Format('blocks %d-%d, total: %d', [Entry.StartBlock,
+      Entry.EndBlock, Entry.EndBlock - Entry.StartBlock + 1]);
   end;
 
 var
@@ -312,7 +313,8 @@ begin
   {$IFNDEF LCL}
   S := '';
   if Actual then S := ' (actual)';
-  TConsole.WriteLn(Format('  Mem Config Table (ver %d.%d)%s:', [Parsed.Major, Parsed.Minor, S]));
+  TConsole.WriteLn(Format('  Mem Config Table (ver %d.%d)%s:',
+    [Parsed.Major, Parsed.Minor, S]));
 
   for i := 0 to High(Parsed.Entries) do
   begin
@@ -342,16 +344,18 @@ begin
         end;
       ekPartition:
         with E.AsPartition do
-          Res := Format('type=0x%.2x:%.2x, %s, "%s"', [PartitionID, Flags,
-            BlocksToStrTotal(Range), GetPartitionName(E.AsPartition)]);
+          Res := Format('type=0x%.2x:%.2x, %s, "%s"',
+            [PartitionID, Flags, BlocksToStrTotal(Range),
+            GetPartitionName(E.AsPartition)]);
       ekNANDConfig:
         with E.AsBlockWithDummy do
-          Res := Format('type %d, data 0x%.8X 0x%.8X', [Dummy, int64(Range.StartBlock),
-            int64(Range.EndBlock)]);
+          Res := Format('type %d, data 0x%.8X 0x%.8X',
+            [Dummy, int64(Range.StartBlock), int64(Range.EndBlock)]);
       ekRAMChip:
         with E.AsBlockWithDummy do
-          Res := Format('0x%.8X-0x%.8X, Bank Size %d', [Dummy, int64(Range.StartBlock),
-            int64(Range.EndBlock), int64(Range.EndBlock - Range.StartBlock + 1)]);
+          Res := Format('0x%.8X-0x%.8X, Bank Size %d',
+            [Dummy, int64(Range.StartBlock), int64(Range.EndBlock),
+            int64(Range.EndBlock - Range.StartBlock + 1)]);
       ekMCT:
         if Length(E.RawData) >= 6 then
           Res := Format('block %d', [PDWord(@E.RawData[2])^]);
@@ -387,7 +391,8 @@ begin
   end;
 end;
 
-procedure ExtractMCTPartitionsToFiles(Stream: TStream; const Parsed: TMCTParsed; const DestDir: string);
+procedure ExtractMCTPartitionsToFiles(Stream: TStream; const Parsed: TMCTParsed;
+  const DestDir: string);
 var
   BaseAddr, NvramOffset: QWord;
   i, CountIdx, CountVal: integer;
@@ -425,7 +430,8 @@ begin
     raise Exception.Create('Partition "nvram" not found. Cannot determine base address');
 
   {$IFNDEF LCL}
-  WriteLn(Format('[i] NVRAM offset = $%.8x -> BaseAddr = $%.8x', [NvramOffset, BaseAddr]));
+  WriteLn(Format('[i] NVRAM offset = $%.8x -> BaseAddr = $%.8x',
+    [NvramOffset, BaseAddr]));
   {$ENDIF}
 
   StreamMaxOffset := BaseAddr + Stream.Size;
@@ -459,7 +465,8 @@ begin
       begin
         AvailableSize := MaxReadable - PartOffset;
         {$IFNDEF LCL}
-        WriteLn(Format('[!] Partition "%s" is partially readable: only $%.x bytes available',
+        WriteLn(Format(
+          '[!] Partition "%s" is partially readable: only $%.x bytes available',
           [GetPartitionName(Partition), AvailableSize]));
         {$ENDIF}
       end
@@ -476,19 +483,21 @@ begin
       if CountIdx = -1 then
       begin
         NameMap.AddObject(Key, TObject(PtrUInt(1)));
-        FileName := Format('%s%2.2x_%s.bin', [IncludeTrailingPathDelimiter(DestDir),
-          Partition.PartitionID, BaseName]);
+        FileName := Format('%s%2.2x_%s.bin',
+          [IncludeTrailingPathDelimiter(DestDir), Partition.PartitionID, BaseName]);
       end
       else
       begin
         CountVal := PtrUInt(NameMap.Objects[CountIdx]) + 1;
         NameMap.Objects[CountIdx] := TObject(PtrUInt(CountVal));
-        FileName := Format('%s%2.2x_%s_%d.bin', [IncludeTrailingPathDelimiter(DestDir),
-          Partition.PartitionID, BaseName, CountVal]);
+        FileName := Format('%s%2.2x_%s_%d.bin',
+          [IncludeTrailingPathDelimiter(DestDir), Partition.PartitionID,
+          BaseName, CountVal]);
       end;
 
       {$IFNDEF LCL}
-      WriteLn(Format('[+] Saving "%s" -> %s (%.x bytes)', [BaseName, FileName, AvailableSize]));
+      WriteLn(Format('[+] Saving "%s" -> %s (%.x bytes)',
+        [BaseName, FileName, AvailableSize]));
       {$ENDIF}
 
       Stream.Position := PartOffset - BaseAddr;
