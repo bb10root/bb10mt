@@ -251,7 +251,7 @@ begin
   {$IFDEF USEGENERICS}
   FreeAndNil(fChangedBlocks);
   {$ELSE}
-  FreeAndNil(fChangedBlocks);
+  fChangedBlocks.Clear;
   {$ENDIF}
   inherited Destroy;
 end;
