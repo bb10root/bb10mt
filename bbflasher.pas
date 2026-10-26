@@ -21,7 +21,7 @@ type
 
 implementation
 
-uses uAutoloader, RIMSignatureParser, qcfm, CLI.Interfaces, CLI.Progress, CLI.Console;
+uses uAutoloader, RIMSignatureParser, qcfm_types, qcfm, CLI.Interfaces, CLI.Progress, CLI.Console;
 
 constructor TBBFlasher.Create(aLoader: TBBLoader);
 begin

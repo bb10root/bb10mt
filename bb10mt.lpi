@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="12"/>
+    <Version Value="13"/>
     <General>
       <Flags>
         <MainUnitHasCreateFormStatements Value="False"/>
@@ -18,7 +18,7 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MinorVersionNr Value="1"/>
-      <BuildNr Value="111"/>
+      <BuildNr Value="113"/>
       <Attributes pvaDebug="True" pvaPreRelease="True"/>
       <StringTable CompanyName="Oleksandr" FileDescription="BB10 MultiTool"/>
     </VersionInfo>
@@ -338,6 +338,24 @@
         <PackageName Value="LazUtils"/>
       </Item>
     </RequiredPackages>
+    <Units>
+      <Unit>
+        <Filename Value="qcfm_types.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="qcfm_utils.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="qcfm_streams.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="qcfm_packer.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+    </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>

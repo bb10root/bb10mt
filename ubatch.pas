@@ -19,7 +19,7 @@ var
 
 implementation
 
-uses uAutoloader, qcfm, FileUtil, scripthandler, StrUtils, uMisc, qnx6,
+uses uAutoloader, qcfm_types, qcfm, FileUtil, scripthandler, StrUtils, uMisc, qnx6,
   CLI.Interfaces,
   CLI.Progress,
   CLI.Console;
