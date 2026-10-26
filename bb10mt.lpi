@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="12"/>
+    <Version Value="13"/>
     <General>
       <Flags>
         <MainUnitHasCreateFormStatements Value="False"/>
@@ -18,7 +18,7 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MinorVersionNr Value="1"/>
-      <BuildNr Value="109"/>
+      <BuildNr Value="111"/>
       <Attributes pvaDebug="True" pvaPreRelease="True"/>
       <StringTable CompanyName="Oleksandr" FileDescription="BB10 MultiTool"/>
     </VersionInfo>
@@ -341,239 +341,188 @@
     <Units>
       <Unit>
         <Filename Value="bb10mt.lpr"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="ubarutils.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uBarUtils"/>
       </Unit>
       <Unit>
         <Filename Value="uflash.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uFlash"/>
       </Unit>
       <Unit>
         <Filename Value="uqnx.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uQNX"/>
       </Unit>
       <Unit>
         <Filename Value="ubar.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uBar"/>
       </Unit>
       <Unit>
         <Filename Value="uqcfm.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uQCFM"/>
       </Unit>
       <Unit>
         <Filename Value="nvre.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="mct.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="MCT"/>
       </Unit>
       <Unit>
         <Filename Value="uraw.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uRAW"/>
       </Unit>
       <Unit>
         <Filename Value="uarchive.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uArchive"/>
       </Unit>
       <Unit>
         <Filename Value="uinfo.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uInfo"/>
       </Unit>
       <Unit>
         <Filename Value="ustp.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uSTP"/>
       </Unit>
       <Unit>
         <Filename Value="stp.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="STP"/>
       </Unit>
       <Unit>
         <Filename Value="urcfs.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uRCFS"/>
       </Unit>
       <Unit>
         <Filename Value="pefile.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="PEFile"/>
       </Unit>
       <Unit>
         <Filename Value="ldr.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="ramloader.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="RamLoader"/>
       </Unit>
       <Unit>
         <Filename Value="bb_usb_detect.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="mainnet.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="MainNet"/>
       </Unit>
       <Unit>
         <Filename Value="unet.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uNet"/>
       </Unit>
       <Unit>
         <Filename Value="logger.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="Logger"/>
       </Unit>
       <Unit>
         <Filename Value="umisc.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uMisc"/>
       </Unit>
       <Unit>
         <Filename Value="uautoloader.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uAutoloader"/>
       </Unit>
       <Unit>
         <Filename Value="ucrypto.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uCrypto"/>
       </Unit>
       <Unit>
         <Filename Value="ecdsa_p521.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="usubstream.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uSubStream"/>
       </Unit>
       <Unit>
         <Filename Value="uvmdk.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uVMDK"/>
       </Unit>
       <Unit>
         <Filename Value="ulzo2.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uLZO2"/>
       </Unit>
       <Unit>
         <Filename Value="uscript.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uScript"/>
       </Unit>
       <Unit>
         <Filename Value="uqnxcmd.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="uqnx6device.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uQNX6Device"/>
       </Unit>
       <Unit>
         <Filename Value="uqnx6filesystem.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uQNX6FileSystem"/>
       </Unit>
       <Unit>
         <Filename Value="uqnx6blockmanager.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uQNX6BlockManager"/>
       </Unit>
       <Unit>
         <Filename Value="uqnx6inodemanager.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uQNX6InodeManager"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.device.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.blockmgr.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.inodemgr.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.fsck.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.compactor.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.types.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.device.tests.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.blockmgr.tests.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.inodemgr.tests.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.tests.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="qnx.utils.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="QNX.Utils"/>
       </Unit>
       <Unit>
         <Filename Value="qnx.debloat.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="QNX.Debloat"/>
       </Unit>
       <Unit>
         <Filename Value="qnx.commands.script.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="QNX.Commands.Script"/>
       </Unit>
       <Unit>
         <Filename Value="qnx6.triecache.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="ubatch.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="uBatch"/>
       </Unit>
       <Unit>
         <Filename Value="scripthandler.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="rimsignatureparser.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="RIMSignatureParser"/>
       </Unit>
     </Units>

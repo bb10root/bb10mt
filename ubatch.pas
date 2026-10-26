@@ -74,10 +74,6 @@ var
   inputSize, freeSpace: int64;
   checkPath: string;
 
-  cap: TPEAutoloaderHeaderInfo;
-  autoloader : TAutoloaderReader;
-
-
 begin
   Result := 0;
   os_bundle := '';

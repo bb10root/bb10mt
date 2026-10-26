@@ -17,7 +17,7 @@ uses
   uQCFM,
   uRAW,
   uNet,
-  uBatch, RIMSignatureParser;
+  uBatch;
 
   {$R *.res}
 
