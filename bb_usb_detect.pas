@@ -74,6 +74,8 @@ begin
       MaskInt := (MaskInt shl 8) or cardinal(StrToIntDef(MaskParts[i], 0));
     end;
 
+    if MaskInt = 0 then Exit;
+
     NetBase := IPInt and MaskInt;
     Broadcast := NetBase or (not MaskInt);
 
@@ -130,7 +132,6 @@ begin
 
     Parts[High(Parts)] := LowerCase(IntToHex(NewValue, Length(LastPart)));
 
-    // Виправлення: Використання статичного виклику String.Join
     Result := string.Join(':', Parts);
   except
     Result := '';
@@ -140,7 +141,7 @@ end;
 procedure ProcessInterface(var Interfaces: TBBInterfaceList; const IfName, MAC: string;
   const IPv4, IPv4Mask, IPv6: string);
 var
-  Idx: integer;
+  Idx, i: integer;
   Found: boolean;
 begin
   // Skip invalid interfaces
@@ -148,11 +149,13 @@ begin
   if not (IsAPIPAAddress(IPv4) or IsLinkLocalIPv6(IPv6)) then Exit;
 
   Found := False;
-  for Idx := 0 to High(Interfaces) do
+  Idx := -1;
+  for i := 0 to High(Interfaces) do
   begin
-    if Interfaces[Idx].Name = IfName then
+    if SameText(Interfaces[i].Name, IfName) or SameText(Interfaces[i].MAC, MAC) then
     begin
       Found := True;
+      Idx := i;
       Break;
     end;
   end;
@@ -169,13 +172,14 @@ begin
     Interfaces[Idx].IPv6Phone := '';
   end;
 
-  // Update IP addresses
+  // Update IPv4 addresses only if valid
   if IsAPIPAAddress(IPv4) then
   begin
     Interfaces[Idx].IPv4 := IPv4;
     Interfaces[Idx].IPv4Phone := IPv4PhoneIP(IPv4, IPv4Mask);
   end;
 
+  // Update IPv6 addresses only if valid
   if IsLinkLocalIPv6(IPv6) then
   begin
     Interfaces[Idx].IPv6 := IPv6;
@@ -271,13 +275,14 @@ begin
   begin
     if (i > 0) and ((i mod 2) = 0) then
       Result := Result + ':';
-    Result := Result + IntToHex(Addr[i], 2);
+    Result := Result + LowerCase(IntToHex(Addr[i], 2));
   end;
 end;
 {$ELSE}
 var
-  buffer: array[0..INET6_ADDRSTRLEN-1] of char;
+  buffer: array[0..INET6_ADDRSTRLEN - 1] of char;
 begin
+  FillChar(buffer, SizeOf(buffer), 0);
   if inet_ntop(AF_INET6, @Addr[0], @buffer[0], INET6_ADDRSTRLEN) <> nil then
     Result := string(buffer)
   else
@@ -428,11 +433,10 @@ var
   pUnicastAddress: PIP_ADAPTER_UNICAST_ADDRESS;
   BufferLength: ULONG;
   RetVal: DWORD;
-  xInterface: TBBInterface;
-  IPBuffer: array[0..INET6_ADDRSTRLEN-1] of AnsiChar;
+  IPBuffer: array[0..INET6_ADDRSTRLEN - 1] of AnsiChar;
   BufferSize: DWORD;
+  IPv4Addr, IPv6Addr, MacStr, IfName: string;
   HasValidAddress: Boolean;
-  IPv4Addr, IPv6Addr: string;
 begin
   SetLength(Result, 0);
 
@@ -451,6 +455,7 @@ begin
     if RetVal = ERROR_BUFFER_OVERFLOW then
     begin
       FreeMem(pAdapterAddresses);
+      pAdapterAddresses := nil;
       GetMem(pAdapterAddresses, BufferLength);
       RetVal := GetAdaptersAddresses(
         AF_UNSPEC,
@@ -470,24 +475,22 @@ begin
       try
         if pCurrentAdapter^.OperStatus = IfOperStatusUp then
         begin
-          xInterface.Name := UTF8Encode(WideCharToString(pCurrentAdapter^.FriendlyName));
-          xInterface.MAC := '';
-          xInterface.IPv4 := '';
-          xInterface.IPv4Phone := '';
-          xInterface.IPv6 := '';
-          xInterface.IPv6Phone := '';
-          HasValidAddress := False;
+          IfName := UTF8Encode(WideCharToString(pCurrentAdapter^.FriendlyName));
+          MacStr := '';
           IPv4Addr := '';
           IPv6Addr := '';
+          HasValidAddress := False;
 
           if pCurrentAdapter^.PhysicalAddressLength > 0 then
-            xInterface.MAC := MACToString(@pCurrentAdapter^.PhysicalAddress[0],
-                                         pCurrentAdapter^.PhysicalAddressLength);
+            MacStr := MACToString(@pCurrentAdapter^.PhysicalAddress[0],
+                                 pCurrentAdapter^.PhysicalAddressLength);
 
           pUnicastAddress := pCurrentAdapter^.FirstUnicastAddress;
           while pUnicastAddress <> nil do
           begin
             BufferSize := INET6_ADDRSTRLEN;
+            FillChar(IPBuffer, SizeOf(IPBuffer), 0);
+
             if WSAAddressToStringA(
               pUnicastAddress^.Address.lpSockaddr,
               pUnicastAddress^.Address.iSockaddrLength,
@@ -499,25 +502,29 @@ begin
               case pUnicastAddress^.Address.lpSockaddr^.sa_family of
                 AF_INET:
                   begin
-                    IPv4Addr := string(IPBuffer);
-                    if IsAPIPAAddress(IPv4Addr) then
+                    if IsAPIPAAddress(string(IPBuffer)) then
+                    begin
+                      IPv4Addr := string(IPBuffer);
                       HasValidAddress := True;
+                    end;
                   end;
 
                 AF_INET6:
                   begin
-                    IPv6Addr := string(IPBuffer);
-                    if IsLinkLocalIPv6(IPv6Addr) then
+                    if IsLinkLocalIPv6(string(IPBuffer)) then
+                    begin
+                      IPv6Addr := string(IPBuffer);
                       HasValidAddress := True;
+                    end;
                   end;
               end;
             end;
             pUnicastAddress := pUnicastAddress^.Next;
           end;
 
-          if HasValidAddress and (xInterface.MAC <> '') then
+          if HasValidAddress and (MacStr <> '') then
           begin
-            ProcessInterface(Result, xInterface.Name, xInterface.MAC,
+            ProcessInterface(Result, IfName, MacStr,
                            IPv4Addr, '255.255.255.252', IPv6Addr);
           end;
         end;
@@ -528,7 +535,8 @@ begin
       pCurrentAdapter := pCurrentAdapter^.Next;
     end;
   finally
-    FreeMem(pAdapterAddresses);
+    if pAdapterAddresses <> nil then
+      FreeMem(pAdapterAddresses);
   end;
 end;
 

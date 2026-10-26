@@ -8,6 +8,8 @@ uses
   Classes,
   SysUtils,
   RamLoader,
+  bbconst,
+  bbdevicedb,
   uInfo,
   CLI.Interfaces,    // Core interfaces
   CLI.Command,       // Base command implementation
@@ -397,8 +399,11 @@ begin
     DisplayBrandingAndOSInfo(RAM);
 
     TConsole.WriteLn('');
-    DisplayBlocklist('OS Blocklist:', RAM.Loader.BlockedOS);
-    DisplayBlocklist('Radio Blocklist:', RAM.Loader.BlockedRadio);
+    if Assigned(RAM.Client.Loader) then
+    begin
+      DisplayBlocklist('OS Blocklist:', RAM.Client.Loader.BlockedOS);
+      DisplayBlocklist('Radio Blocklist:', RAM.Client.Loader.BlockedRadio);
+    end;
 
     RAM.RebootPhone;
 
@@ -455,9 +460,11 @@ end;
 
 procedure TInfoCommand.DisplayDeviceInfo(RAM: TRamLoader);
 begin
+  if not Assigned(RAM.Client.Loader) then Exit;
+
   TConsole.WriteLn('QNX Device Info:');
-  TConsole.WriteLn(Format('  PIN:                %.8X', [cardinal(RAM.Loader.PIN)]));
-  TConsole.WriteLn(Format('  BSN:                %d', [uint64(RAM.Loader.BSN)]));
+  TConsole.WriteLn(Format('  PIN:                 %.8X', [QWord(RAM.Client.Loader.PIN)]));
+  TConsole.WriteLn(Format('  BSN:                 %d', [uint64(RAM.Client.Loader.BSN)]));
   TConsole.WriteLn('');
 end;
 
@@ -467,7 +474,9 @@ var
   TmpData: TBytes;
   BRMetrics: PBRMetrics;
 begin
-  TmpData := RAM.Loader.HWID_OVERRIDE;
+  if not Assigned(RAM.Client.Loader) then Exit;
+
+  TmpData := RAM.Client.Loader.HWID_OVERRIDE;
   if Length(TmpData) = SizeOf(THW_Override) then
     HWID := PHW_Override(@TmpData[0])^
   else
@@ -481,12 +490,12 @@ begin
   begin
     TConsole.WriteLn(Format('Bootrom Version:   %d.%d.%d.%d',
       [TFourInts(BR_ver)[3], TFourInts(BR_ver)[2], TFourInts(BR_ver)[1], TFourInts(BR_ver)[0]]));
-    TConsole.WriteLn(Format('  Hardware ID:        0x%.8X %s',
-      [cardinal(RAM.ModelID), ReadCString(HardwareName)]));
+    TConsole.WriteLn(Format('  Hardware ID:         0x%.8X %s',
+      [QWord(RAM.ModelID), ReadCString(HardwareName)]));
     TConsole.WriteLn(Format('  HW ID Override:    0x%.8X (OSTypes: 0x%.8X)',
-      [cardinal(HWID.ID), cardinal(HWID.OS)]));
-    TConsole.WriteLn(Format('  Hardware OS ID:    0x%.8X', [cardinal(HWOSID)]));
-    TConsole.WriteLn(Format('  BR ID:              0x%.8X', [cardinal(BRID)]));
+      [QWord(HWID.ID), QWord(HWID.OS)]));
+    TConsole.WriteLn(Format('  Hardware OS ID:    0x%.8X', [QWord(HWOSID)]));
+    TConsole.WriteLn(Format('  BR ID:              0x%.8X', [QWord(BRID)]));
     TConsole.WriteLn(Format('  Metrics Version:   %d.%d', [(version shr 16) and $FF, version and $FF]));
     TConsole.WriteLn(Format('  Build Date:         %s', [ReadCString(BuildDate)]));
     TConsole.WriteLn(Format('  Build Time:         %s', [ReadCString(BuildTime)]));
@@ -503,13 +512,13 @@ procedure TInfoCommand.DisplaySecurityInfo(BRMetrics: PBRMetrics);
 begin
   with BRMetrics^ do
   begin
-    TConsole.WriteLn(Format('  Supported Options: 0x%.8X', [cardinal(SupportedOptions)]));
-    TConsole.WriteLn(Format('  Drivers:           0x%.8X', [cardinal(Drivers)]));
-    TConsole.WriteLn(Format('  Processor:         0x%.8X', [cardinal(Processor)]));
-    TConsole.WriteLn(Format('  FlashID:           0x%.8X', [cardinal(FlashID)]));
-    TConsole.WriteLn(Format('  LDR Blocks:        0x%.8X', [cardinal(LDRBlocks)]));
-    TConsole.WriteLn(Format('  Bootrom Size:      0x%.8X', [cardinal(BootromSize)]));
-    TConsole.WriteLn(Format('  Persist Data Addr: 0x%.8X', [cardinal(PersistAddr)]));
+    TConsole.WriteLn(Format('  Supported Options: 0x%.8X', [QWord(SupportedOptions)]));
+    TConsole.WriteLn(Format('  Drivers:           0x%.8X', [QWord(Drivers)]));
+    TConsole.WriteLn(Format('  Processor:         0x%.8X', [QWord(Processor)]));
+    TConsole.WriteLn(Format('  FlashID:           0x%.8X', [QWord(FlashID)]));
+    TConsole.WriteLn(Format('  LDR Blocks:        0x%.8X', [QWord(LDRBlocks)]));
+    TConsole.WriteLn(Format('  Bootrom Size:      0x%.8X', [QWord(BootromSize)]));
+    TConsole.WriteLn(Format('  Persist Data Addr: 0x%.8X', [QWord(PersistAddr)]));
   end;
 end;
 
@@ -576,14 +585,17 @@ begin
     ShowParsedMCT(MCT);
     Stream.Clear;
 
-    TmpData := RAM.Loader.GetMCT;
-    if Length(TmpData) > 0 then
+    if Assigned(RAM.Client.Loader) then
     begin
-      TConsole.WriteLn('');
-      Stream.WriteBuffer(TmpData[0], Length(TmpData));
-      Stream.Position := 0;
-      MCT := ParseMCTStream(Stream);
-      ShowParsedMCT(MCT, True);
+      TmpData := RAM.Client.Loader.GetMCT;
+      if Length(TmpData) > 0 then
+      begin
+        TConsole.WriteLn('');
+        Stream.WriteBuffer(TmpData[0], Length(TmpData));
+        Stream.Position := 0;
+        MCT := ParseMCTStream(Stream);
+        ShowParsedMCT(MCT, True);
+      end;
     end;
   end;
 end;
@@ -610,21 +622,23 @@ procedure TInfoCommand.DisplayFlashInfo(RAM: TRamLoader);
 var
   FlashData: TBytes;
 begin
-  FlashData := RAM.Loader.FlashRegionsInfo;
+  if not Assigned(RAM.Client.Loader) then Exit;
+
+  FlashData := RAM.Client.Loader.FlashRegionsInfo;
   if Length(FlashData) >= SizeOf(TFlashInfo) then
   begin
     with PFlashInfo(@FlashData[0])^ do
     begin
       TConsole.WriteLn('');
       TConsole.WriteLn('Flash:');
-      TConsole.WriteLn(Format('  Flash ID:              NAND blocks 0-%d', [Blocks]));
-      TConsole.WriteLn(Format('  Device ID:             0x%.2X', [DeviceID]));
-      TConsole.WriteLn(Format('  Vendor ID:             0x%.2X', [VendorID]));
-      TConsole.WriteLn(Format('  Manufacturer Name:     %s', [EMMCVendorByID(VendorID)]));
-      TConsole.WriteLn(Format('  Product Name:          %s', [ReadCString(Name)]));
-      TConsole.WriteLn(Format('  Product Serial Number: 0x%.8X', [cardinal(Serial)]));
+      TConsole.WriteLn(Format('  Flash ID:               NAND blocks 0-%d', [Blocks]));
+      TConsole.WriteLn(Format('  Device ID:              0x%.2X', [DeviceID]));
+      TConsole.WriteLn(Format('  Vendor ID:              0x%.2X', [VendorID]));
+      TConsole.WriteLn(Format('  Manufacturer Name:      %s', [EMMCVendorByID(VendorID)]));
+      TConsole.WriteLn(Format('  Product Name:           %s', [ReadCString(Name)]));
+      TConsole.WriteLn(Format('  Product Serial Number: 0x%.8X', [QWord(Serial)]));
       TConsole.WriteLn('  MMC Partition Info:');
-      TConsole.WriteLn(Format('    User:                %d KB', [user]));
+      TConsole.WriteLn(Format('    User:                 %d KB', [user]));
     end;
   end;
 end;
@@ -633,7 +647,9 @@ procedure TInfoCommand.DisplayDRAMInfo(RAM: TRamLoader);
 var
   DramData: TBytes;
 begin
-  DramData := RAM.Loader.DRAMInfo;
+  if not Assigned(RAM.Client.Loader) then Exit;
+
+  DramData := RAM.Client.Loader.DRAMInfo;
   if Length(DramData) >= SizeOf(TDRAM_Info) then
   begin
     with PDRAM_Info(@DramData[0])^ do
@@ -652,11 +668,13 @@ procedure TInfoCommand.DisplayBrandingAndOSInfo(RAM: TRamLoader);
 var
   OsData: TBytes;
 begin
+  if not Assigned(RAM.Client.Loader) then Exit;
+
   TConsole.WriteLn('');
   TConsole.WriteLn('Branding:');
-  TConsole.WriteLn(Format('  ECID:               %d', [cardinal(RAM.Loader.VendorID)]));
+  TConsole.WriteLn(Format('  ECID:               %d', [QWord(RAM.Client.Loader.VendorID)]));
 
-  OsData := RAM.Loader.OSMetrics;
+  OsData := RAM.Client.Loader.OSMetrics;
   if Length(OsData) >= SizeOf(TOSMetrics) then
   begin
     with POSMetrics(@OsData[0])^ do
@@ -664,13 +682,13 @@ begin
       TConsole.WriteLn('');
       TConsole.WriteLn(Format('OS Version:          %s', [VersionToString(os_version)]));
       TConsole.WriteLn(Format('  Hardware ID:        0x%.8X %s',
-        [cardinal(hardware_id), ReadCString(device_string)]));
+        [QWord(hardware_id), ReadCString(device_string)]));
       TConsole.WriteLn(Format('  Metrics Version:   %d.%d', [version shr 16, version and $FF]));
       TConsole.WriteLn(Format('  Build Date:         %s', [ReadCString(build_date)]));
       TConsole.WriteLn(Format('  Build Time:         %s', [ReadCString(build_time)]));
       TConsole.WriteLn(Format('  Build User:         %s', [ReadCString(build_user)]));
       TConsole.WriteLn(Format('  OS Address:         0x%.8X-0x%.8X',
-        [cardinal(load_base_ptr), cardinal(load_end_ptr - 1)]));
+        [QWord(load_base_ptr), QWord(load_end_ptr - 1)]));
     end;
   end;
 end;

@@ -5,7 +5,7 @@ unit bbLoader;
 interface
 
 uses
-  Classes, SysUtils, bbusb;
+  Classes, SysUtils, bbconst, bbtransport;
 
 const
   MAX_FLASH_BLOCK = $3FF4;
@@ -13,12 +13,12 @@ const
 type
   TBBLoader = class
   private
-    fUSB: TBBUSB;
+    fUSB: TBBTransport;
     function SafeChannel2(Cmd: word; const Data: TBytes; expectedResp: word; const FuncName: string): TBytes;
     function SafeChannel2Bool(Cmd: word; const Data: TBytes; expectedResp: word;
       const FuncName: string): boolean;
   public
-    constructor Create(usb: TBBUSB);
+    constructor Create(usb: TBBTransport);
     function BugdispLog: TBytes;
     function FlashRegionsInfo: TBytes;
     function BlockedOS: TBytes;
@@ -54,7 +54,7 @@ uses
 
   { TBBLoader }
 
-constructor TBBLoader.Create(usb: TBBUSB);
+constructor TBBLoader.Create(usb: TBBTransport);
 begin
   inherited Create;
   fUSB := usb;
@@ -158,27 +158,31 @@ end;
 
 function TBBLoader.GetBLog: TBytes;
 begin
-  Result := SafeChannel2($21, [], $0000, 'GetBLog');
+  Result := SafeChannel2($21, nil, $0000, 'GetBLog');
 end;
 
 function TBBLoader.GetOSBoot: TBytes;
 begin
-  Result := SafeChannel2($CB, [], $0000, 'GetOSBoot');
+  Result := SafeChannel2($CB, nil, $0000, 'GetOSBoot');
 end;
 
 function TBBLoader.GetLAL: TBytes;
+var
+  Data: TBytes;
 begin
-  Result := SafeChannel2($B3, [0, 0, 0, 0], $0000, 'GetLAL');
+  SetLength(Data, 4);
+  FillChar(Data[0], 4, 0);
+  Result := SafeChannel2($B3, Data, $0000, 'GetLAL');
 end;
 
 function TBBLoader.GetMCT: TBytes;
 begin
-  Result := SafeChannel2($D9, [], $C9, 'GetMCT');
+  Result := SafeChannel2($D9, nil, $C9, 'GetMCT');
 end;
 
 function TBBLoader.FlashRegionsInfo: TBytes;
 begin
-  Result := SafeChannel2($B4, [], $D2, 'FlashRegionsInfo');
+  Result := SafeChannel2($B4, nil, $D2, 'FlashRegionsInfo');
 end;
 
 function TBBLoader.PIN: DWord;
@@ -188,7 +192,7 @@ var
 begin
   Result := 0;
   try
-    Buff := fUSB.Channel2($E7, Cmd, []);
+    Buff := fUSB.Channel2($E7, Cmd, nil);
     if (Cmd = $D1) and (Length(Buff) >= SizeOf(DWord)) then
       Result := PDWord(@Buff[0])^;
   except
@@ -204,7 +208,7 @@ var
 begin
   Result := 0;
   try
-    Buff := fUSB.Channel2($EA, Cmd, []);
+    Buff := fUSB.Channel2($EA, Cmd, nil);
     if (Cmd = $FC) and (Length(Buff) >= SizeOf(DWord)) then
       Result := PDWord(@Buff[0])^;
   except
@@ -220,7 +224,7 @@ var
 begin
   Result := 0;
   try
-    Buff := fUSB.Channel2($DB, Cmd, []);
+    Buff := fUSB.Channel2($DB, Cmd, nil);
     if (Cmd = $CB) and (Length(Buff) >= 4) then
       Result := PWord(@Buff[2])^;
   except
@@ -231,7 +235,7 @@ end;
 
 function TBBLoader.HWID_OVERRIDE: TBytes;
 begin
-  Result := SafeChannel2($BD, [], $BE, 'HWID_OVERRIDE');
+  Result := SafeChannel2($BD, nil, $BE, 'HWID_OVERRIDE');
 end;
 
 function TBBLoader.SendBlock(const Data: TBytes): boolean;
@@ -250,11 +254,10 @@ var
 begin
   Result := False;
   try
-    fUSB.Channel2($40C0, RespCmd, []);
+    fUSB.Channel2($40C0, RespCmd, nil);
     Result := (RespCmd = $4006) or (RespCmd = $402E);
     if not Result then
-      TConsole.WriteLn(Format('Complete returned unexpected response 0x%.4X',
-        [RespCmd]), ccRed);
+      TConsole.WriteLn(Format('Complete returned unexpected response 0x%.4X', [RespCmd]), ccRed);
   except
     on E: Exception do
       TConsole.WriteLn('Error in Complete: ' + E.Message, ccRed);
@@ -272,42 +275,42 @@ end;
 
 function TBBLoader.Reboot: boolean;
 begin
-  Result := SafeChannel2Bool($80EF, [], $80C7, 'Reboot');
+  Result := SafeChannel2Bool($80EF, nil, $80C7, 'Reboot');
 end;
 
 function TBBLoader.BlockedOS: TBytes;
 begin
-  Result := SafeChannel2($EC, [], $FD, 'BlockedOS');
+  Result := SafeChannel2($EC, nil, $FD, 'BlockedOS');
 end;
 
 function TBBLoader.DRAMInfo: TBytes;
 begin
-  Result := SafeChannel2($BF, [], $D9, 'DRAMInfo');
+  Result := SafeChannel2($BF, nil, $D9, 'DRAMInfo');
 end;
 
 procedure TBBLoader.EnableLED;
 begin
-  SafeChannel2Bool($C3, [], $0000, 'EnableLED');
+  SafeChannel2Bool($C3, nil, $0000, 'EnableLED');
 end;
 
 procedure TBBLoader.RemoveInstaller;
 begin
-  SafeChannel2Bool($E0, [], $0000, 'RemoveInstaller');
+  SafeChannel2Bool($E0, nil, $0000, 'RemoveInstaller');
 end;
 
 procedure TBBLoader.EraseMCT;
 begin
-  SafeChannel2Bool($F3, [], $0000, 'EraseMCT');
+  SafeChannel2Bool($F3, nil, $0000, 'EraseMCT');
 end;
 
 function TBBLoader.BlockedRadio: TBytes;
 begin
-  Result := SafeChannel2($ED, [], $FE, 'BlockedRadio');
+  Result := SafeChannel2($ED, nil, $FE, 'BlockedRadio');
 end;
 
 function TBBLoader.OSMetrics: TBytes;
 begin
-  Result := SafeChannel2($D8, [], $C8, 'OSMetrics');
+  Result := SafeChannel2($D8, nil, $C8, 'OSMetrics');
 end;
 
 end.

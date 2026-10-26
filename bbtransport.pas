@@ -1,18 +1,21 @@
-unit bbusb;
+unit bbtransport;
 
 {$mode ObjFPC}{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, LibUsb, LibUsbOop;
+  Classes, SysUtils, LibUsb, LibUsbOop, bbconst, crc, Math;
 
 type
   EUSBError = class(Exception);
 
-  TLoadCallback = procedure(i, s: integer);
+  TEndpointPair = record
+    InAddr: byte;
+    OutAddr: byte;
+  end;
 
-  TBBUSB = class
+  TBBTransport = class
   private
     fUSBContext: TLibUsbContext;
     fDevice: TLibUsbDevice;
@@ -22,73 +25,34 @@ type
     fPacketNum: array[0..2] of word;
     fMode: byte;
 
+    fEndpoints: array[0..3] of TEndpointPair;
+    fEPCount: integer;
+
+    function GetEndpoint(Channel: word; IsIn: boolean): byte;
   public
     constructor Create;
     destructor Destroy; override;
+
     procedure Open(const ProductIDs: array of word; TimeoutMS: integer = 5000);
     function TryOpen(const ProductIDs: array of word; TimeoutMS: integer = 5000): boolean;
     procedure Close;
 
-    function GetProductIDs(vendorID: word): specialize TArray<word>;
-
-    procedure Ping0;
-    procedure Nuke;
-    function GetVar(id, bufSize: word): TBytes;
-
-    function SetMode(mode: byte): boolean;
-    function PasswordInfo: boolean;
-
-    procedure SwitchChannel;
-
-    procedure Reboot;
-
-    function GetMetrics: TBytes;
-    function GetModelID: longword;
-    procedure SendLoader(addr: longword; Loader: TBytes; chunkSize: integer = 2044;
-      cb: TLoadCallback = nil);
-    procedure RunLoader(addr: longword);
+    function ReadData(var Channel: word; var Data: TBytes): integer;
+    function SendData(Channel: word; Data: TBytes): integer;
 
     function Channel0(var cmd: byte; Data: TBytes): TBytes;
     function Channel1(Data: TBytes): TBytes;
     function Channel2(Cmd: word; var Resp: word; Data: TBytes): TBytes;
 
-    function ReadData(var Channel: word; var Data: TBytes): integer;
-    function SendData(Channel: word; Data: TBytes): integer;
+    function GetProductIDs(vendorID: word): specialize TArray<word>;
 
-    property id: cardinal read fID;
+    property ID: cardinal read fID;
+    property Mode: byte read fMode write fMode;
   end;
 
 function WaitForDeviceWithID(VendorID, ProductID, timeoutMS: integer): boolean;
 
 implementation
-
-uses crc, Math, uCrypto;
-
-const
-  MAX_PACKET = $10000;
-
-  fBootMode: array[0..4] of string = (
-    'RIM REINIT',
-    'RIM-BootLoader',
-    'RIM-RAMLoader',
-    'RIM UPL',
-    'RIM-BootNUKE'
-    );
-
-  CMD_PING = $F000;
-  CMD_READ_METRICS = $F001;
-  CMD_EXIT = $F002;
-  CMD_FRESHNESS_SEAL = $F003;
-  CMD_WRITE_RAM = $F004;
-  CMD_EXECUTE_RAM = $F005;
-  CMD_PASSWORD = $F006;
-  CMD_CHANGE_BPS = $F007;
-  CMD_DEVICE_NUKE = $F008;
-  CMD_WRITE_RAM_SETUP = $F009;
-  CMD_WRITE_RAM_VERIFY = $F00A;
-  CMD_READ_MODEL_CODE = $F00B;
-  CMD_X1 = $F00C;
-  CMD_X2 = $F00D;
 
 function WaitForDeviceWithID(VendorID, ProductID, timeoutMS: integer): boolean;
 var
@@ -125,26 +89,28 @@ begin
   end;
 end;
 
-{ TBBUSB }
+{ TBBTransport }
 
-constructor TBBUSB.Create;
+constructor TBBTransport.Create;
 begin
   inherited Create;
   fUSBContext := TLibUsbContext.Create;
   fDevice := nil;
   fClaimedInterface := -1;
   fMode := $FF;
+  fEPCount := 0;
+  FillChar(fEndpoints, SizeOf(fEndpoints), 0);
   FillChar(fPacketNum, SizeOf(fPacketNum), 0);
 end;
 
-destructor TBBUSB.Destroy;
+destructor TBBTransport.Destroy;
 begin
   Close;
   FreeAndNil(fUSBContext);
   inherited Destroy;
 end;
 
-procedure TBBUSB.Close;
+procedure TBBTransport.Close;
 begin
   if Assigned(fDevice) then
   begin
@@ -156,16 +122,46 @@ begin
     FreeAndNil(fDevice);
   end;
   fID := 0;
+  fEPCount := 0;
+  FillChar(fEndpoints, SizeOf(fEndpoints), 0);
 end;
 
-function TBBUSB.TryOpen(const ProductIDs: array of word; TimeoutMS: integer = 5000): boolean;
+function TBBTransport.GetEndpoint(Channel: word; IsIn: boolean): byte;
 var
-  cfg, i, cnt, t, j: integer;
+  idx: integer;
+begin
+  if fEPCount = 0 then
+  begin
+    if IsIn then Exit($81) else Exit($01);
+  end;
+
+  if (fEPCount > 1) and (Channel >= 2) then
+    idx := 1
+  else
+    idx := 0;
+
+  if IsIn then
+    Result := fEndpoints[idx].InAddr
+  else
+    Result := fEndpoints[idx].OutAddr;
+
+  if Result = 0 then
+  begin
+    if IsIn then Result := $81 else Result := $01;
+  end;
+end;
+
+function TBBTransport.TryOpen(const ProductIDs: array of word; TimeoutMS: integer = 5000): boolean;
+var
+  cfg, i, cnt, t, j, k, epIdx: integer;
   DevList: PPlibusb_device;
   DevDesc: libusb_device_descriptor;
   config: Plibusb_config_descriptor;
   iface: libusb_interface;
   alt: libusb_interface_descriptor;
+  ep: libusb_endpoint_descriptor;
+  epAddr, epNum: byte;
+  isIn: boolean;
 
   function IsProductIDMatch(pid: word): boolean;
   var
@@ -220,8 +216,7 @@ begin
             try
               for j := 0 to config^.bNumInterfaces - 1 do
               begin
-                {$PUSH}
-                {$R-}
+                {$PUSH}{$R-}{$Q-}
                 iface := config^._interface^[j];
                 {$POP}
                 if iface.num_altsetting < 1 then
@@ -236,9 +231,51 @@ begin
                     if libusb_claim_interface(fDevice.Handle, alt.bInterfaceNumber) = 0 then
                     begin
                       fClaimedInterface := alt.bInterfaceNumber;
+                      fEPCount := 0;
+                      FillChar(fEndpoints, SizeOf(fEndpoints), 0);
+
+                      for k := 0 to alt.bNumEndpoints - 1 do
+                      begin
+                        {$PUSH}{$R-}{$Q-}
+                        ep := alt.endpoint^[k];
+                        {$POP}
+
+                        if (ep.bmAttributes and $03) = LIBUSB_TRANSFER_TYPE_BULK then
+                        begin
+                          epAddr := ep.bEndpointAddress;
+                          epNum := epAddr and $0F;
+                          isIn := (epAddr and $80) <> 0;
+
+                          epIdx := -1;
+                          for epIdx := 0 to fEPCount - 1 do
+                          begin
+                            if ((fEndpoints[epIdx].InAddr and $0F) = epNum) or
+                               ((fEndpoints[epIdx].OutAddr and $0F) = epNum) then
+                              Break;
+                          end;
+
+                          if (epIdx = -1) or (epIdx >= fEPCount) then
+                          begin
+                            if fEPCount < Length(fEndpoints) then
+                            begin
+                              epIdx := fEPCount;
+                              Inc(fEPCount);
+                            end
+                            else
+                              Continue;
+                          end;
+
+                          if isIn then
+                            fEndpoints[epIdx].InAddr := epAddr
+                          else
+                            fEndpoints[epIdx].OutAddr := epAddr;
+                        end;
+                      end;
+
                       FillChar(fPacketNum, SizeOf(fPacketNum), 0);
                       fMode := $FF;
-                      Exit(True);
+                      Result := True;
+                      Break;
                     end;
                   end;
                 end;
@@ -247,13 +284,17 @@ begin
               libusb_free_config_descriptor(config);
             end;
 
-            // Якщо не вдалося захопити інтерфейс
-            FreeAndNil(fDevice);
+            if Result then
+              Break
+            else
+              FreeAndNil(fDevice);
           end;
         end;
       finally
         fUSBContext.FreeDeviceList(DevList);
       end;
+
+      if Result then Exit(True);
     end;
 
     Sleep(100);
@@ -261,13 +302,13 @@ begin
   until t >= TimeoutMS;
 end;
 
-procedure TBBUSB.Open(const ProductIDs: array of word; TimeoutMS: integer = 5000);
+procedure TBBTransport.Open(const ProductIDs: array of word; TimeoutMS: integer = 5000);
 begin
   if not TryOpen(ProductIDs, TimeoutMS) then
     raise EUSBError.Create('Device with required ProductID(s) not found or could not be opened');
 end;
 
-function TBBUSB.ReadData(var Channel: word; var Data: TBytes): integer;
+function TBBTransport.ReadData(var Channel: word; var Data: TBytes): integer;
 var
   pkt: TBytes;
   err, transferred, dataSize: integer;
@@ -278,13 +319,7 @@ begin
   if (fDevice = nil) or (fDevice.Handle = nil) then
     raise EUSBError.Create('Device not initialized');
 
-  if (fID = 1) or (fID = $8001) then
-    endpoint := $82
-  else if fID = $8017 then
-    endpoint := $87
-  else
-    endpoint := $81;
-
+  endpoint := GetEndpoint(Channel, True);
   SetLength(pkt, MAX_PACKET);
 
   err := libusb_bulk_transfer(fDevice.Handle, endpoint, @pkt[0], MAX_PACKET, transferred, 1000);
@@ -309,7 +344,7 @@ begin
   Result := dataSize;
 end;
 
-function TBBUSB.SendData(Channel: word; Data: TBytes): integer;
+function TBBTransport.SendData(Channel: word; Data: TBytes): integer;
 var
   pkt: TBytes;
   err, transferred: integer;
@@ -328,12 +363,7 @@ begin
   if dataSize > 0 then
     Move(Data[0], pkt[4], dataSize);
 
-  if (fID = 1) or (fID = $8001) then
-    endpoint := $02
-  else if fID = $8017 then
-    endpoint := $07
-  else
-    endpoint := $01;
+  endpoint := GetEndpoint(Channel, False);
 
   err := libusb_bulk_transfer(fDevice.Handle, endpoint, @pkt[0], size, transferred, 1000);
 
@@ -343,11 +373,12 @@ begin
   Result := transferred;
 end;
 
-function TBBUSB.Channel0(var cmd: byte; Data: TBytes): TBytes;
+function TBBTransport.Channel0(var cmd: byte; Data: TBytes): TBytes;
 var
   pkt: TBytes;
   Channel, size: word;
 begin
+  SetLength(Result, 0);
   size := Length(Data);
   SetLength(pkt, size + 4);
   pkt[0] := cmd;
@@ -367,18 +398,17 @@ begin
     begin
       SetLength(Result, size - 4);
       Move(pkt[4], Result[0], size - 4);
-    end
-    else
-      SetLength(Result, 0);
+    end;
   end;
   Inc(fPacketNum[0]);
 end;
 
-function TBBUSB.Channel1(Data: TBytes): TBytes;
+function TBBTransport.Channel1(Data: TBytes): TBytes;
 var
   pkt: TBytes;
   Channel, dataSize, size: word;
 begin
+  SetLength(Result, 0);
   dataSize := Length(Data);
   size := dataSize + 10;
   SetLength(pkt, size);
@@ -391,21 +421,28 @@ begin
 
   SendData(1, pkt);
   ReadData(Channel, pkt);
-  size := Max(0, Length(pkt) - 10);
-  SetLength(Result, size);
-  if size > 0 then
-    Move(pkt[10], Result[0], size);
 
-  // Очікуємо підтвердження / другого пакета
-  ReadData(Channel, pkt);
+  if Length(pkt) >= 10 then
+  begin
+    size := Length(pkt) - 10;
+    SetLength(Result, size);
+    if size > 0 then
+      Move(pkt[10], Result[0], size);
+  end;
+
+  try
+    ReadData(Channel, pkt);
+  except
+  end;
 end;
 
-function TBBUSB.Channel2(Cmd: word; var Resp: word; Data: TBytes): TBytes;
+function TBBTransport.Channel2(Cmd: word; var Resp: word; Data: TBytes): TBytes;
 var
   pkt: TBytes;
   Channel, dataSize, size: word;
   crc1, crc2: cardinal;
 begin
+  SetLength(Result, 0);
   dataSize := Length(Data);
   size := dataSize + 8;
   SetLength(pkt, size);
@@ -420,235 +457,31 @@ begin
 
   if Channel = 2 then
   begin
-    size := Max(0, Length(pkt) - 8);
-    Resp := PWord(@pkt[2])^;
-    crc1 := crc32(0, @pkt[0], Length(pkt) - 4);
-    crc2 := PDword(@pkt[Length(pkt) - 4])^;
-
-    if crc1 <> crc2 then
-      Resp := $FFFF;
-
-    if (size > 0) and (Resp <> $15) then
+    if Length(pkt) >= 8 then
     begin
-      SetLength(Result, size);
-      Move(pkt[4], Result[0], size);
-    end
-    else
-      SetLength(Result, 0);
+      size := Length(pkt) - 8;
+      Resp := PWord(@pkt[2])^;
+      crc1 := crc32(0, @pkt[0], Length(pkt) - 4);
+      crc2 := PDword(@pkt[Length(pkt) - 4])^;
 
-    ReadData(Channel, pkt);
-  end;
-end;
+      if crc1 <> crc2 then
+        Resp := $FFFF;
 
-function TBBUSB.SetMode(mode: byte): boolean;
-var
-  Data: TBytes;
-  l: integer;
-  cmd: byte = 7;
-begin
-  if mode > High(fBootMode) then
-    Exit(False);
-
-  l := Length(fBootMode[mode]);
-  SetLength(Data, 17);
-  FillChar(Data[0], 17, 0);
-  if l > 0 then
-    Move(fBootMode[mode][1], Data[0], Min(l, 16));
-  Data[16] := 1;
-
-  Data := Channel0(cmd, Data);
-  Result := (cmd = 8);
-end;
-
-function TBBUSB.PasswordInfo: boolean;
-var
-  cmd: byte = $A;
-  Channel: word;
-  challengeData, challenge, salt, hashedData: TBytes;
-  iterations: integer;
-  aPassword: string = '';
-begin
-  Result := False;
-  while True do
-  begin
-    challengeData := Channel0(cmd, hashedData);
-    if cmd = $10 then
-    begin
-      try
-        ReadData(Channel, challengeData);
-      except
-        // Ігноруємо таймаути при успішному виконанні
+      if (size > 0) and (Resp <> $15) then
+      begin
+        SetLength(Result, size);
+        Move(pkt[4], Result[0], size);
       end;
-      Exit(True);
     end;
 
-    if cmd = $0E then
-    begin
-      if Length(challengeData) < 24 then
-        Exit(False);
-
-      if aPassword <> '' then
-        WriteLn('Wrong password!');
-
-      if (challengeData[1] - challengeData[0]) = 2 then
-        Exit(False);
-
-      WriteLn(Format('Enter password (%d/%d):', [challengeData[0], challengeData[1]]));
-      repeat
-        ReadLn(aPassword);
-        aPassword := Trim(aPassword);
-      until aPassword <> '';
-
-      SetLength(challenge, 4);
-      Move(challengeData[4], challenge[0], 4);
-
-      SetLength(salt, 8);
-      Move(challengeData[12], salt[0], 8);
-
-      iterations := PDword(@challengeData[20])^;
-
-      hashedData := HashPassV2(challenge, salt, aPassword, iterations);
-
-      // Вставити префікс [0x00, 0x00, 0x40, 0x00] на початок hashedData
-      SetLength(hashedData, Length(hashedData) + 4);
-      Move(hashedData[0], hashedData[4], Length(hashedData) - 4);
-      hashedData[0] := $00;
-      hashedData[1] := $00;
-      hashedData[2] := $40;
-      hashedData[3] := $00;
-
-      cmd := $0F;
+    try
+      ReadData(Channel, pkt);
+    except
     end;
   end;
 end;
 
-procedure TBBUSB.Nuke;
-var
-  Data: TBytes;
-  Channel: word;
-begin
-  SetLength(Data, 2);
-  PWord(@Data[0])^ := CMD_DEVICE_NUKE;
-  Data := Channel1(Data);
-  ReadData(Channel, Data);
-end;
-
-procedure TBBUSB.RunLoader(addr: longword);
-var
-  Data: TBytes;
-  Channel: word;
-begin
-  SetLength(Data, 6);
-  PWord(@Data[0])^ := CMD_EXECUTE_RAM;
-  PDWord(@Data[2])^ := addr;
-  Data := Channel1(Data);
-  ReadData(Channel, Data);
-end;
-
-procedure TBBUSB.SendLoader(addr: longword; Loader: TBytes; chunkSize: integer = 2044;
-  cb: TLoadCallback = nil);
-var
-  pkt, Data: TBytes;
-  p, i, s, size: integer;
-begin
-  size := Length(Loader);
-  SetLength(Data, 10);
-  PWord(@Data[0])^ := CMD_WRITE_RAM_SETUP;
-  PDWord(@Data[2])^ := addr;
-  PDWord(@Data[6])^ := size;
-  Channel1(Data);
-
-  p := size;
-  SetLength(pkt, chunkSize + 10);
-
-  i := 0;
-  while p > 0 do
-  begin
-    s := Min(chunkSize, p);
-    SetLength(pkt, s + 10);
-
-    PWord(@pkt[0])^ := CMD_WRITE_RAM;
-    PDWord(@pkt[2])^ := addr + i;
-    PDWord(@pkt[6])^ := s;
-    Move(Loader[i], pkt[10], s);
-    Channel1(pkt);
-
-    Dec(p, s);
-    Inc(i, s);
-    if Assigned(cb) then
-      cb(i, size);
-  end;
-
-  if Assigned(cb) then
-    cb(size, size);
-
-  SetLength(pkt, 2);
-  PWord(@pkt[0])^ := CMD_WRITE_RAM_VERIFY;
-  Channel1(pkt);
-end;
-
-function TBBUSB.GetMetrics: TBytes;
-var
-  Data: TBytes;
-begin
-  SetLength(Data, 2);
-  PWord(@Data[0])^ := CMD_READ_METRICS;
-  Result := Channel1(Data);
-end;
-
-function TBBUSB.GetModelID: longword;
-var
-  Data: TBytes;
-begin
-  SetLength(Data, 2);
-  PWord(@Data[0])^ := CMD_READ_MODEL_CODE;
-  Data := Channel1(Data);
-  if Length(Data) < 14 then
-    raise EUSBError.CreateFmt('Unexpected response size: %d bytes', [Length(Data)]);
-
-  Move(Data[10], Result, 4);
-end;
-
-procedure TBBUSB.Ping0;
-var
-  cmd: byte = 1;
-begin
-  Channel0(cmd, [$14, $05, $83, $19, $00, $00, $00, $00]);
-end;
-
-function TBBUSB.GetVar(id, bufSize: word): TBytes;
-var
-  cmd: byte = 5;
-  Data: TBytes;
-begin
-  SetLength(Data, 4);
-  PWord(@Data[0])^ := bufSize;
-  PWord(@Data[2])^ := id;
-  Result := Channel0(cmd, Data);
-  if cmd <> 6 then
-    SetLength(Result, 0);
-end;
-
-procedure TBBUSB.SwitchChannel;
-var
-  Data: TBytes;
-  Channel: word;
-begin
-  SendData(1, [6, 6]);
-  ReadData(Channel, Data);
-  ReadData(Channel, Data);
-  fPacketNum[1] := 0;
-end;
-
-procedure TBBUSB.Reboot;
-var
-  cmd: byte = 3;
-begin
-  Channel0(cmd, []);
-  fPacketNum[0] := 0;
-end;
-
-function TBBUSB.GetProductIDs(vendorID: word): specialize TArray<word>;
+function TBBTransport.GetProductIDs(vendorID: word): specialize TArray<word>;
 var
   DevList: PPlibusb_device;
   cnt, i, j, uniqueCount: integer;
