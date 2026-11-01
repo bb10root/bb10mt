@@ -63,7 +63,7 @@ var
 
 implementation
 
-uses qcfm, ldr, uMisc, uAutoloader;
+uses qcfm, uMisc, uAutoloader,uExtractLoaders;
 
 var
   pb: IProgressIndicator = nil;

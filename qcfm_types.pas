@@ -8,24 +8,24 @@ uses
   Classes, SysUtils, Generics.Collections;
 
 const
-  imageNVRAM     = $03;
-  imageUFS       = $05;
-  imageMBR       = $06;
-  imageSIG       = $07;
-  imageIFS       = $08;
-  imageRFS       = $09;
-  imageR_MBR     = $0A;
-  imageR_SIG     = $0B;
-  imageR_RFS     = $0C;
-  imageCalWork   = $0F;
+  imageNVRAM = $03;
+  imageUFS = $05;
+  imageMBR = $06;
+  imageSIG = $07;
+  imageIFS = $08;
+  imageRFS = $09;
+  imageR_MBR = $0A;
+  imageR_SIG = $0B;
+  imageR_RFS = $0C;
+  imageCalWork = $0F;
   imageCalBackup = $10;
-  imageDMI       = $11;
-  imageDMI_MBR   = $12;
-  imageDMI_FSYS  = $13;
-  imageOS        = $18;
-  imageSIG2      = $89;
-  imageR_SIG2    = $8C;
-  imageDMI_SIG2  = $93;
+  imageDMI = $11;
+  imageDMI_MBR = $12;
+  imageDMI_FSYS = $13;
+  imageOS = $18;
+  imageSIG2 = $89;
+  imageR_SIG2 = $8C;
+  imageDMI_SIG2 = $93;
 
   defaultBlockSize = $10000;
 
