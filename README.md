@@ -4,19 +4,56 @@
 
 ## 🚀 Installation & Shell Completion
 
-To enable autocompletion for `bb10mt` in your shell, export the completion script using one of the commands below:
+A ready-to-use Bash completion script ships with the project as `myapp-completion.sh`, so completion works even if your build cannot generate one:
 
-* **Bash:**
-  ```bash
-  bb10mt --completion-file > myapp-completion.sh
-  source myapp-completion.sh
-  ```
+```bash
+source /path/to/bb10mt/myapp-completion.sh
+# to make it permanent:
+echo "source /path/to/bb10mt/myapp-completion.sh" >> ~/.bashrc
+```
 
-* **PowerShell:**
-  ```powershell
-  bb10mt --completion-file-pwsh > myapp-completion.ps1
-  . .\myapp-completion.ps1
-  ```
+Run the script directly to self-check it:
+
+```bash
+./myapp-completion.sh    # prints "completion self-check OK" when the completion logic is sane
+```
+
+It completes:
+
+* every top-level command and its subcommands;
+* the global options `-h/--help`, `--help-complete`, `--completion-file`, `--completion-file-pwsh`, `-v/--version`;
+* each command's own flags and parameters (see the command reference below);
+* file names after an option that takes a value, via Bash's default completion fallback.
+
+The completion tables live in the script:
+
+| Function / variable | Contents |
+| :--- | :--- |
+| `_bb10mt_subcommands` | command tree (which subcommands belong to which command) |
+| `_bb10mt_options` | flags and parameters per command path |
+| `value_opts` (inside `_bb10mt_complete`) | options that consume the next word, so a value is not mistaken for a subcommand |
+
+When you add, rename or remove a command or parameter, update these lists in the same commit.
+
+### PowerShell
+
+```powershell
+bb10mt --completion-file-pwsh > myapp-completion.ps1
+. .\myapp-completion.ps1
+```
+
+### Regenerating from the binary
+
+If your `bb10mt` build includes shell-completion support, it can emit a dynamic script that reflects the compiled command tree at completion time:
+
+```bash
+bb10mt --completion-file > myapp-completion.sh
+source myapp-completion.sh
+```
+
+Write the output to a dedicated file and source it; do not append the script itself to `.bashrc` or `.bash_profile`. If the command produces an empty file, your build predates that support — keep using the bundled script.
+
+**Limitations:** the bundled script is Bash-only (Linux/macOS); it does not suggest values for options that take comma-separated lists (`--versions`, `--blacklist`) or for data discovered from a device.
 
 ---
 
