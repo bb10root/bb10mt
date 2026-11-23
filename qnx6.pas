@@ -1300,7 +1300,7 @@ var
   r_inode, b_inode: TQNX6_DInode;
   rootBlock, bootBlock: TDwordArray;
   Data: TBytes;
-  rootEntries: array[0..1] of TQNX6_RawDirEntry;
+  rootEntries: array[0..2] of TQNX6_RawDirEntry;
   bootEntries: array[0..1] of TQNX6_RawDirEntry;
   inodesBlks, bitmapBlks: TBlocksList;
   rawSB: TQNX6_SuperBlockRaw;
@@ -1317,6 +1317,7 @@ begin
 
   sb := TQNX6_SuperBlock.Create(fDevice.Stream);
   sb.SelfPos := $2000;
+  fDevice.ActiveSB := sb; // the device owns sb from here on
 
   if fDevice.BlockSize <= 4096 then
     fDevice.DataStart := QNX6FS_BOOT_RSRV + QNX6FS_SBLK_RSRV
@@ -1397,8 +1398,10 @@ begin
     FillChar(rootEntries, SizeOf(rootEntries), 0);
     rootEntries[0].inode := 1;
     RawDirEntrySetName(rootEntries[0], '.');
-    rootEntries[1].inode := 2;
-    RawDirEntrySetName(rootEntries[1], 'boot');
+    rootEntries[1].inode := 1;
+    RawDirEntrySetName(rootEntries[1], '..');
+    rootEntries[2].inode := 2;
+    RawDirEntrySetName(rootEntries[2], 'boot');
 
     FillChar(Data[0], fDevice.BlockSize, 0);
     Move(rootEntries[0], Data[0], SizeOf(rootEntries));
@@ -1421,7 +1424,7 @@ begin
     Flush;
     sb.Write;
   finally
-    FreeAndNil(sb);
+    // sb is owned by fDevice.ActiveSB and freed with the device
   end;
 end;
 

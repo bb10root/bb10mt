@@ -126,7 +126,7 @@ type
 
     property Stream: TStream read fStream write fStream;
     property BootBlock: TQNX6_BootBlock read fBB;
-    property ActiveSB: TQNX6_SuperBlock read fActiveSB;
+    property ActiveSB: TQNX6_SuperBlock read fActiveSB write fActiveSB;
     property SB0: TQNX6_SuperBlock read fSB0;
     property SB1: TQNX6_SuperBlock read fSB1;
 
@@ -241,6 +241,9 @@ end;
 
 procedure TQNX6VolumeDevice.ClearStructures;
 begin
+  // ActiveSB may be a newly created superblock owned by the device.
+  if (fActiveSB <> nil) and (fActiveSB <> fSB0) and (fActiveSB <> fSB1) then
+    FreeAndNil(fActiveSB);
   fActiveSB := nil;
   FreeAndNil(fSB1);
   FreeAndNil(fSB0);
