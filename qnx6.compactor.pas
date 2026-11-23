@@ -167,6 +167,9 @@ begin
   maxBlock := Min(FFS.BlockMgr.Bitmap.Size, DWord(
     (FFS.Device.Stream.Size - FFS.Device.DataStart) div FFS.Device.BlockSize));
 
+  if maxBlock <= FFS.Device.UserAreaStart then
+    Exit(0);
+
   FirstFreePos := FFS.Device.UserAreaStart;
   LastUsedPos := maxBlock - 1;
 
